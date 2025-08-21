@@ -63,6 +63,7 @@ public class ExperimentManager : MonoBehaviour
         yield return new WaitForSeconds(m_PauseUIAppearTime);
         m_PauseUI.SetActive(false);
         m_FinishUI.SetActive(isLastGroup);
+        if (isLastGroup) m_ShowImg.sprite = null;
     }
 
     void ListenUserInput()
