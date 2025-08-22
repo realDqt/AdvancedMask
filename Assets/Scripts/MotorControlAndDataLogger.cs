@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Globalization;
 using UnityEngine;
 
 // NetMQ and MessagePack for Pupil Core
@@ -45,6 +46,22 @@ public class MotorControlAndDataLogger : MonoBehaviour
     [Tooltip("Motor angle for high luminance")]
     public float motorAngleForHighLuminance = 0f;
 
+    
+    public float coarseAdjustmentDegree = 10.0f;
+    public float fineAdjustmentDegree = 5.0f;
+
+    public int coarseSpeedPercent = 60;
+    public int fineSpeedPercent = 30;
+    
+    public int maxUserCount = 100;
+
+    public string finalDegreeSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\test.csv";
+
+    private int curUserId = 0;
+    private float[] finalDegrees;
+    
+    
+
     // Motor control
     private ELLDevices _mgr;
     private ELLDevice _dev;
@@ -82,15 +99,19 @@ public class MotorControlAndDataLogger : MonoBehaviour
         {
             _logInterval = 1f / logsPerSecond;
         }
+        
+        finalDegrees = new float[maxUserCount];
+        for (int i = 0; i < maxUserCount; i++)
+            finalDegrees[i] = initialAngleOffset;
     }
 
     void Update()
     {
         // Manual motor control is disabled; only pupil-driven control is active
-        // HandleMotorInput(); 
+        HandleMotorInput(); 
         HandleContinuousLogging();
         HandleManualLogging();
-        HandlePupilMotorControl();
+        //HandlePupilMotorControl();
     }
 
     void OnDestroy() => Cleanup();
@@ -145,6 +166,22 @@ public class MotorControlAndDataLogger : MonoBehaviour
             _dev = null;
             _mgr = null;
             return false;
+        }
+    }
+
+    private void SaveFinalDegreesToDisk(string filepath)
+    {
+        if (finalDegrees == null || finalDegrees.Length == 0) return;
+
+        using (var writer = new StreamWriter(filepath, false, System.Text.Encoding.UTF8))
+        {
+            // table's title
+            writer.WriteLine("UserID,Degree");
+
+            for (int i = 0; i < finalDegrees.Length; i++)
+            {
+                writer.WriteLine($"{i},{finalDegrees[i].ToString(CultureInfo.InvariantCulture)}");
+            }
         }
     }
 
@@ -263,6 +300,72 @@ public class MotorControlAndDataLogger : MonoBehaviour
             }
         }
     }
+
+    private void HandleMotorInput()
+    {
+        if (!_motorConnected) return;
+        
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            Clockwise(coarseSpeedPercent, coarseAdjustmentDegree);
+        }
+        else if (Input.GetKey(KeyCode.LeftArrow))
+        {
+           CounterClockwise(coarseSpeedPercent, coarseAdjustmentDegree);
+        }else if (Input.GetKey(KeyCode.UpArrow))
+        {
+            Clockwise(fineSpeedPercent, fineAdjustmentDegree);
+        }else if (Input.GetKey(KeyCode.DownArrow))
+        {
+            CounterClockwise(fineSpeedPercent, fineAdjustmentDegree);
+        }else if (Input.GetKey(KeyCode.Space))
+        {
+            Debug.Log("Final degree selected by user is " + finalDegrees[curUserId++]);
+        }else if (Input.GetKey(KeyCode.S))
+        {
+            SaveFinalDegreesToDisk(finalDegreeSavePath);
+        }
+    }
+
+    private void SetVelocityPercent(int speedPercent)
+    {
+        if(!EnsureDevice()) return;
+        speedPercent = Mathf.Clamp(speedPercent, 0, 100);
+        string pp = speedPercent.ToString("X2");
+        char addr = _dev.DeviceInfo.Address;
+        _mgr.SendFreeCommand($"{addr}sv{pp}");
+    }
+    private void Clockwise(int speedPercent, float degree)
+    {
+        if(!EnsureDevice()) return;
+        if (curUserId >= maxUserCount) return;
+        if(degree < minimumAngleChangeToMove){
+            Debug.LogWarning("degree is too small to move!");
+            return;
+        }
+
+        SetVelocityPercent(speedPercent);
+        _dev.SetJogstepSize((decimal)degree);
+        _dev.JogForward();
+        finalDegrees[curUserId] += degree;
+    }
+    
+    private void CounterClockwise(int speedPercent, float degree)
+    {
+        if(!EnsureDevice()) return;
+        if (curUserId >= maxUserCount) return;
+        if(degree < minimumAngleChangeToMove){
+            Debug.LogWarning("degree is too small to move!");
+            return;
+        }
+
+        SetVelocityPercent(speedPercent);
+        _dev.SetJogstepSize((decimal)degree);
+        _dev.JogBackward();
+        finalDegrees[curUserId] -= degree;
+    }
+    
+    
 
     // Estimate luminance (cd/m^2) from pupil radius (mm)
     private float CalculateLuminanceFromPupilRadius(float radiusMm)

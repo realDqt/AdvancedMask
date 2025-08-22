@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 
 public class ExperimentManager : MonoBehaviour
 {
@@ -12,6 +13,8 @@ public class ExperimentManager : MonoBehaviour
      public GameObject m_FinishUI;
 
      public Image m_ShowImg;
+
+     public string m_FilePathToSaveUserChoices = "D:\\DALAB\\Research\\AdvancedMask\\Output\\test.csv";
      
      private Sprite[] m_TestSprites;
 
@@ -63,7 +66,11 @@ public class ExperimentManager : MonoBehaviour
         yield return new WaitForSeconds(m_PauseUIAppearTime);
         m_PauseUI.SetActive(false);
         m_FinishUI.SetActive(isLastGroup);
-        if (isLastGroup) m_ShowImg.sprite = null;
+        if (isLastGroup)
+        {
+            m_ShowImg.sprite = null;
+            SaveFinalChoicesToDisk(m_FilePathToSaveUserChoices);
+        }
     }
 
     void ListenUserInput()
@@ -90,5 +97,22 @@ public class ExperimentManager : MonoBehaviour
     {
         m_TestSprites = Resources.LoadAll<Sprite>(m_TestImgPath);
         m_UserChoices = new int[m_TestSprites.Length / 2];
+    }
+    
+    private void SaveFinalChoicesToDisk(string filepath)
+    {
+        if (m_UserChoices == null || m_UserChoices.Length == 0) return;
+        Debug.Log("Start saving......");
+        using (var writer = new StreamWriter(filepath, false, System.Text.Encoding.UTF8))
+        {
+            // table's title
+            writer.WriteLine("GroupID,UserChoice");
+
+            for (int i = 0; i < m_UserChoices.Length; i++)
+            {
+                string choice = m_UserChoices[i] == 1 ? "First Image" : "Second Image";
+                writer.WriteLine($"{i},{choice}");
+            }
+        }
     }
 }

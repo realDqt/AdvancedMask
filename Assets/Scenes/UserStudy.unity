@@ -251,6 +251,7 @@ MonoBehaviour:
   m_RestUI: {fileID: 8199335023822271371}
   m_FinishUI: {fileID: 8199335025195088274}
   m_ShowImg: {fileID: 8199335025123567124}
+  m_FilePathToSaveUserChoices: D:\DALAB\Research\AdvancedMask\Output\test.csv
 --- !u!4 &716688002
 Transform:
   m_ObjectHideFlags: 0
