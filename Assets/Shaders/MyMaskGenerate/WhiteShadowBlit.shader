@@ -13,11 +13,13 @@ Shader "Hidden/WhiteShadowBlit"
             #include "UnityCG.cginc"
 
             sampler2D _ShadowMaskTex;
+            sampler2D _ObjectMaskTex;
 
             fixed4 frag(v2f_img i) : SV_Target
             {
-                half mask = tex2D(_ShadowMaskTex, i.uv).r;
-                return mask > 0.001 ? fixed4(1,1,1,1) : fixed4(0,0,0,1);
+                half shadowMask = tex2D(_ShadowMaskTex, i.uv).r;
+                half objectMask = tex2D(_ObjectMaskTex, i.uv).r;
+                return shadowMask > 0.001 || objectMask > 0.01 ? fixed4(1,1,1,1) : fixed4(0,0,0,1);
             }
             ENDCG
         }
