@@ -220,7 +220,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1cf151b18809d9439b5045e99a74638, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  whiteCasterShader: {fileID: 4800000, guid: a254d118b4bd18347950e32bdebd742a, type: 3}
+  whiteReceiverShader: {fileID: 4800000, guid: a254d118b4bd18347950e32bdebd742a, type: 3}
+  whiteCasterShader: {fileID: 4800000, guid: e6883bf4ff37c0e4c9980c220b4a96ae, type: 3}
 --- !u!1 &971210840
 GameObject:
   m_ObjectHideFlags: 0
