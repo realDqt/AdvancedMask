@@ -11,6 +11,9 @@ public class WhiteShadowPostProcess : MonoBehaviour
     
     [SerializeField]
     public Shader whiteCasterShader;
+
+    public int maskWidth;
+    public int maskHeight;
     
     private Material     _casterMat;
     private Material     _receiverMat; 
@@ -41,7 +44,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
     void ConstructShadowMask()
     {
         // 1. ShadowMask RT
-        _shadowMask = new RenderTexture(_camera.pixelWidth, _camera.pixelHeight, 0,
+        _shadowMask = new RenderTexture(maskWidth, maskHeight, 0,
             RenderTextureFormat.R8, RenderTextureReadWrite.Linear);
         _shadowMask.Create();
 
@@ -73,7 +76,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
     void ConstructObjectMask()
     {
         // 1. ObjectMask RT
-        _objectMask = new RenderTexture(_camera.pixelWidth, _camera.pixelHeight, 0,
+        _objectMask = new RenderTexture(maskWidth, maskHeight, 0,
             RenderTextureFormat.R8, RenderTextureReadWrite.Linear);
         _objectMask.Create();
 
