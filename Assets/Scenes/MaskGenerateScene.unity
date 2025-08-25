@@ -134,9 +134,7 @@ GameObject:
   - component: {fileID: 293643782}
   - component: {fileID: 293643781}
   - component: {fileID: 293643780}
-  - component: {fileID: 293643784}
   - component: {fileID: 293643783}
-  - component: {fileID: 293643785}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -219,118 +217,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 293643779}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2dfc55a507c82b64d83fdd33c032cc79, type: 3}
+  m_Script: {fileID: 11500000, guid: a1cf151b18809d9439b5045e99a74638, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalTransparencyTexture: {fileID: 633737449}
-  opaqueObjects:
-  - {fileID: 1850761775}
-  transparentObjects: []
-  opaqueMaterial: {fileID: 2100000, guid: c25229e264e756644ac7b494196e9a00, type: 2}
-  maskPass: {fileID: 2100000, guid: 216da0fdac5c28b47b4bb92e22cc3ac1, type: 2}
-  transCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 1
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 1
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
---- !u!114 &293643784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293643779}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13c1d668c68bf704e9e1d13552fc01e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maskPass: {fileID: 2100000, guid: 216da0fdac5c28b47b4bb92e22cc3ac1, type: 2}
-  thick: 0.437
-  depth: 0.393
-  bright: 5.49
-  alpha: 0.265
-  color: 0.485
-  transparency: 0.304
-  shadow: 0.251
-  mainTex: {fileID: 0}
-  colorBufferTex: {fileID: 0}
-  depthBufferTex: {fileID: 0}
-  thicknessBufferTex: {fileID: 0}
-  globalTransparencyTex: {fileID: 0}
-  curveTex: {fileID: 0}
---- !u!114 &293643785
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293643779}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cdec7d7e480c62845974762eab98c30d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transparencyTexture: {fileID: 1985548739}
-  renderObjects:
-  - {fileID: 1850761775}
---- !u!84 &633737449
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 5
-  m_Width: 1955
-  m_Height: 530
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 4
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 1
-  m_UseDynamicScale: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
+  whiteCasterShader: {fileID: 4800000, guid: a254d118b4bd18347950e32bdebd742a, type: 3}
 --- !u!1 &971210840
 GameObject:
   m_ObjectHideFlags: 0
@@ -466,7 +356,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1341100603}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -578,48 +468,9 @@ PrefabInstance:
       propertyPath: m_Name
       value: Bunny
       objectReference: {fileID: 0}
+    - target: {fileID: 8164078558771037576, guid: 8e4f70f8b5e9c494eba3d058054bcaa6, type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8e4f70f8b5e9c494eba3d058054bcaa6, type: 3}
---- !u!1 &1850761775 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8164078558771037576, guid: 8e4f70f8b5e9c494eba3d058054bcaa6, type: 3}
-  m_PrefabInstance: {fileID: 1850761774}
-  m_PrefabAsset: {fileID: 0}
---- !u!84 &1985548739
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 5
-  m_Width: 485
-  m_Height: 769
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 4
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 1
-  m_UseDynamicScale: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
