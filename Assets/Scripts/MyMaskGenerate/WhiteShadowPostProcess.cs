@@ -48,7 +48,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
             RenderTextureFormat.R8, RenderTextureReadWrite.Linear);
         _shadowMask.Create();
 
-        // 2. 用来画 ShadowMask 的 CommandBuffer
+        // 2. 用来画 ObjectMask 的 CommandBuffer
         _cbDrawShadowMask = new CommandBuffer { name = "BuildShadowMask" };
         _cbDrawShadowMask.SetRenderTarget(_shadowMask);
         _cbDrawShadowMask.ClearRenderTarget(true, true, Color.black);
