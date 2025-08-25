@@ -126,7 +126,7 @@ Shader "Custom/Mask"
                 mix = 1-mix;
                 mix *= (245.0f/255.0f);
                 mix = pow(mix, 2.2);
-
+                
                 return fixed4(mix, mix, mix, 1);
             }
             

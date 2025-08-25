@@ -202,8 +202,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293643779}
-  m_LocalRotation: {x: -0.0033895562, y: -0.99238926, z: 0.1230849, w: -0.0014757505}
-  m_LocalPosition: {x: 0.312396, y: 1.0476925, z: 3.5826502}
+  m_LocalRotation: {x: 0.00072774827, y: 0.9756355, z: -0.21912967, w: -0.01081707}
+  m_LocalPosition: {x: -0.17661689, y: 2.2479248, z: 4.3238525}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -222,10 +222,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2dfc55a507c82b64d83fdd33c032cc79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  globalTransparencyTexture: {fileID: 801380992}
+  globalTransparencyTexture: {fileID: 633737449}
   opaqueObjects:
   - {fileID: 1850761775}
-  - {fileID: 1341100603}
   transparentObjects: []
   opaqueMaterial: {fileID: 2100000, guid: c25229e264e756644ac7b494196e9a00, type: 2}
   maskPass: {fileID: 2100000, guid: 216da0fdac5c28b47b4bb92e22cc3ac1, type: 2}
@@ -266,13 +265,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maskPass: {fileID: 2100000, guid: 216da0fdac5c28b47b4bb92e22cc3ac1, type: 2}
-  thick: 1
-  depth: 0
-  bright: 0.4
-  alpha: 0
-  color: 0
-  transparency: 0
-  shadow: 0
+  thick: 0.437
+  depth: 0.393
+  bright: 5.49
+  alpha: 0.265
+  color: 0.485
+  transparency: 0.304
+  shadow: 0.251
+  mainTex: {fileID: 0}
+  colorBufferTex: {fileID: 0}
+  depthBufferTex: {fileID: 0}
+  thicknessBufferTex: {fileID: 0}
+  globalTransparencyTex: {fileID: 0}
+  curveTex: {fileID: 0}
 --- !u!114 &293643785
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288,8 +293,7 @@ MonoBehaviour:
   transparencyTexture: {fileID: 1985548739}
   renderObjects:
   - {fileID: 1850761775}
-  - {fileID: 1341100603}
---- !u!84 &801380992
+--- !u!84 &633737449
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -303,8 +307,8 @@ RenderTexture:
   m_DownscaleFallback: 0
   m_IsAlphaChannelOptional: 0
   serializedVersion: 5
-  m_Width: 1468
-  m_Height: 727
+  m_Width: 1955
+  m_Height: 530
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthStencilFormat: 0
