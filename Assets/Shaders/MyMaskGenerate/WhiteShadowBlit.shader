@@ -19,7 +19,7 @@ Shader "Hidden/WhiteShadowBlit"
             {
                 half shadowMask = tex2D(_ShadowMaskTex, i.uv).r;
                 half objectMask = tex2D(_ObjectMaskTex, i.uv).r;
-                return shadowMask > 0.001 || objectMask > 0.01 ? fixed4(1,1,1,1) : fixed4(0,0,0,1);
+                return shadowMask > 0.001 || objectMask > 0.001 ? fixed4(1,1,1,1) : fixed4(0,0,0,1);
             }
             ENDCG
         }
