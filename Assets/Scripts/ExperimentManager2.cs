@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 public class ExperimentManager2 : MonoBehaviour
 {
@@ -26,6 +27,8 @@ public class ExperimentManager2 : MonoBehaviour
 
     private int m_CoeffIdx = 0;
     public Camera m_DepthCamera0;
+
+    private string m_RTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\TargetRT.png";
     
     private void Start()
     {
@@ -52,10 +55,76 @@ public class ExperimentManager2 : MonoBehaviour
         
         m_CurrentActive = m_ShowQueue.Count > 0 ? m_ShowQueue.Dequeue() : null;
         if(m_CurrentActive)m_CurrentActive.SetActive(true);
+
+        SetCameraWidthAndHeight();
+
+    }
+
+    private void SetCameraWidthAndHeight()
+    {
+        int targetWidth = 1074;
+        int targetHeight = 604; // 1074 * 9 / 16
+        RenderTexture rt = new RenderTexture(targetWidth, targetHeight, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB); // 24 是 depth buffer bits
+        rt.name = "CustomRT";
+        rt.Create();
+
+        // 替换旧的 RT（如果有）
+        if (m_DepthCamera0.targetTexture != null)
+        {
+            m_DepthCamera0.targetTexture.Release();
+        }
+
+        m_DepthCamera0.targetTexture = rt;
+    }
+
+    private void LogCameraWidthAndHeight()
+    {
+        Debug.Log("m_DepthCamera0.pixelWidth = " + m_DepthCamera0.pixelWidth);
+        Debug.Log("m_DepthCamera0.pixelHeight = " + m_DepthCamera0.pixelHeight);
+        //Debug.Log("m_DepthCamera0.targetTexture.width = " + m_DepthCamera0.targetTexture.width);
+        //Debug.Log("m_DepthCamera0.targetTexture.height = " + m_DepthCamera0.targetTexture.height);
+    }
+    
+    private void SaveRTToDisk()
+    {
+        RenderTexture.active = m_DepthCamera0.targetTexture;
+        Texture2D tex = new Texture2D(
+            m_DepthCamera0.targetTexture.width,
+            m_DepthCamera0.targetTexture.height,
+            TextureFormat.RGBA32,
+            false
+        );
+        tex.ReadPixels(
+            new Rect(0, 0,
+                m_DepthCamera0.targetTexture.width,
+                m_DepthCamera0.targetTexture.height),
+            0, 0
+        );
+        tex.Apply();
+        RenderTexture.active = null;
+
+        /* ---------- 关键：把透明像素填成黑色 ---------- */
+        Color32[] pixels = tex.GetPixels32();
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (pixels[i].a == 0)          // 完全透明
+            {
+                pixels[i] = new Color32(0, 0, 0, 255); // 纯黑、不透明
+            }
+        }
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        /* ------------------------------------------------ */
+
+        byte[] bytes = tex.EncodeToPNG();
+        File.WriteAllBytes(m_RTSavePath, bytes);
+        Debug.Log($"RT 已保存为 PNG：{m_RTSavePath}");
+        Destroy(tex);
     }
 
     private void Update()
     {
+        LogCameraWidthAndHeight();
         SetCoefficient();
         if (m_ShowQueue.Count > 0 && Input.GetKeyDown(KeyCode.Space))
         {
@@ -63,6 +132,8 @@ public class ExperimentManager2 : MonoBehaviour
             m_CurrentActive = m_ShowQueue.Dequeue();
             m_CurrentActive.SetActive(true);
         }
+        if(Input.GetKeyDown(KeyCode.R))
+            SaveRTToDisk();
     }
     
     void SetCoefficient()

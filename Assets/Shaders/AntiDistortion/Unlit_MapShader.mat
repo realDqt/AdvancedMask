@@ -27,8 +27,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _EyeDist: 0.1
-    - _FOV_Height: 20
-    - _FOV_Width: 20
+    - _FOV_Height: 40
+    - _FOV_Width: 40
     - _Screen_Height: 40
     - _Screen_Width: 20
     m_Colors:
