@@ -1,7 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class ExperimentManager2 : MonoBehaviour
 {
@@ -13,7 +16,7 @@ public class ExperimentManager2 : MonoBehaviour
     private string[] m_ModelNames = new string[]
     {
         "Teapot", "Monkey", "Dragon", "Buddha", "Bunny", "Sphere", "Torus", "Intergalactic_Spaceship-(Wavefront)", "Only_Spider_with_Animations_Export",
-        "rose",
+        "rose2",
     };
 
     private GameObject[] m_Models;         // Found models
@@ -26,13 +29,20 @@ public class ExperimentManager2 : MonoBehaviour
     public Vector4[] m_KB = new Vector4[3]{ new Vector4(-3.743558e-04f, -1.014192e-02f, 1.028135e+00f, 1.0f), new Vector4(), new Vector4() };
 
     private int m_CoeffIdx = 0;
-    public Camera m_DepthCamera0;
+    public Camera m_RawCamera;
+    public Camera m_MaskCamera;
+    public Camera m_BackgroundCamera;
 
-    private string m_RTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\TargetRT.png";
-    
-    private void Start()
+    public GameObject m_Receiver;
+
+    private string m_RawRTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\RawRT.png";
+    private string m_MaskRTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\MaskRT.png";
+    private string m_BackgrondRTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\BackgrondRT.png";
+
+    private WhiteShadowPostProcess m_WhiteShadowPostProcess;
+
+    private void Awake()
     {
-        // 1. Locate models
         m_Models = new GameObject[m_ModelNames.Length];
         for (int i = 0; i < m_Models.Length; i++)
         {
@@ -46,6 +56,12 @@ public class ExperimentManager2 : MonoBehaviour
                 m_Models[i].SetActive(false);
             }
         }
+    }
+
+    private void Start()
+    {
+        // 1. Locate models
+        // Now it's implemented in Awake()
 
         // 2. Build randomized queue
         BuildRandomQueue();
@@ -55,49 +71,83 @@ public class ExperimentManager2 : MonoBehaviour
         
         m_CurrentActive = m_ShowQueue.Count > 0 ? m_ShowQueue.Dequeue() : null;
         if(m_CurrentActive)m_CurrentActive.SetActive(true);
+        else Debug.LogError("Initial Current active is null");
 
         SetCameraWidthAndHeight();
 
+        m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
+        Debug.Log("Starting");
+        if (m_WhiteShadowPostProcess == null)
+        {
+            Debug.LogError("White Shadow PostProcess not found");
+        }
+        else
+        {
+            Debug.Log("White Shadow PostProcess found");
+            m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActive);
+            m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
+        }
+        
+        //LoadImgToBackgroundCamera("Backgrounds/Small8");
     }
 
-    private void SetCameraWidthAndHeight()
+    private void LoadImgToBackgroundCamera(string imgPath)
     {
-        int targetWidth = 1074;
-        int targetHeight = 604; // 1074 * 9 / 16
+        
+        Texture2D srcTex = Resources.Load<Texture2D>(imgPath);
+        if (srcTex == null)
+        {
+            Debug.LogError("Failed to find img at ：" + imgPath);
+            return;
+        }
+        
+        // copy
+        Graphics.Blit(srcTex, m_BackgroundCamera.targetTexture);
+    }
+
+    private void SetCameraRTWidthAndHeight(Camera camera, int targetWidth, int targetHeight)
+    {
         RenderTexture rt = new RenderTexture(targetWidth, targetHeight, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB); // 24 是 depth buffer bits
         rt.name = "CustomRT";
         rt.Create();
 
         // 替换旧的 RT（如果有）
-        if (m_DepthCamera0.targetTexture != null)
+        if (camera.targetTexture != null)
         {
-            m_DepthCamera0.targetTexture.Release();
+            camera.targetTexture.Release();
         }
 
-        m_DepthCamera0.targetTexture = rt;
+        camera.targetTexture = rt;
+    }
+
+    private void SetCameraWidthAndHeight()
+    {
+        SetCameraRTWidthAndHeight(m_RawCamera, 1074, 604);
+        SetCameraRTWidthAndHeight(m_MaskCamera, 1074, 604);
+        SetCameraRTWidthAndHeight(m_BackgroundCamera, 1074, 604);
     }
 
     private void LogCameraWidthAndHeight()
     {
-        Debug.Log("m_DepthCamera0.pixelWidth = " + m_DepthCamera0.pixelWidth);
-        Debug.Log("m_DepthCamera0.pixelHeight = " + m_DepthCamera0.pixelHeight);
+        Debug.Log("m_DepthCamera0.pixelWidth = " + m_RawCamera.pixelWidth);
+        Debug.Log("m_DepthCamera0.pixelHeight = " + m_RawCamera.pixelHeight);
         //Debug.Log("m_DepthCamera0.targetTexture.width = " + m_DepthCamera0.targetTexture.width);
         //Debug.Log("m_DepthCamera0.targetTexture.height = " + m_DepthCamera0.targetTexture.height);
     }
-    
-    private void SaveRTToDisk()
+
+    private void SaveCameraRTToDisk(Camera camera, string path)
     {
-        RenderTexture.active = m_DepthCamera0.targetTexture;
+        RenderTexture.active = camera.targetTexture;
         Texture2D tex = new Texture2D(
-            m_DepthCamera0.targetTexture.width,
-            m_DepthCamera0.targetTexture.height,
+            camera.targetTexture.width,
+            camera.targetTexture.height,
             TextureFormat.RGBA32,
             false
         );
         tex.ReadPixels(
             new Rect(0, 0,
-                m_DepthCamera0.targetTexture.width,
-                m_DepthCamera0.targetTexture.height),
+                camera.targetTexture.width,
+                camera.targetTexture.height),
             0, 0
         );
         tex.Apply();
@@ -117,9 +167,16 @@ public class ExperimentManager2 : MonoBehaviour
         /* ------------------------------------------------ */
 
         byte[] bytes = tex.EncodeToPNG();
-        File.WriteAllBytes(m_RTSavePath, bytes);
-        Debug.Log($"RT 已保存为 PNG：{m_RTSavePath}");
+        File.WriteAllBytes(path, bytes);
+        Debug.Log($"RT 已保存为 PNG：{path}");
         Destroy(tex);
+    }
+    
+    private void SaveRTToDisk()
+    {
+       SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
+       SaveCameraRTToDisk(m_MaskCamera, m_MaskRTSavePath);
+       SaveCameraRTToDisk(m_BackgroundCamera, m_BackgrondRTSavePath);
     }
 
     private void Update()
@@ -131,6 +188,9 @@ public class ExperimentManager2 : MonoBehaviour
             m_CurrentActive.SetActive(false);
             m_CurrentActive = m_ShowQueue.Dequeue();
             m_CurrentActive.SetActive(true);
+            
+            m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActive);
+            m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
         }
         if(Input.GetKeyDown(KeyCode.R))
             SaveRTToDisk();
@@ -151,7 +211,7 @@ public class ExperimentManager2 : MonoBehaviour
         
         //Debug.Log("Test: coefficient idx = " + m_Idx);
 
-        var antiDistortion = m_DepthCamera0.GetComponent<AntiDistortion>();
+        var antiDistortion = m_RawCamera.GetComponent<AntiDistortion>();
         if (antiDistortion)
         {
             antiDistortion.m_KR = m_KR[m_CoeffIdx];

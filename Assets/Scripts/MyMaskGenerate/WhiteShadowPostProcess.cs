@@ -29,82 +29,116 @@ public class WhiteShadowPostProcess : MonoBehaviour
     
     private Material      _blitMaterial;
     private Camera _camera;
-    
 
-    void Start()
+
+
+    void Awake()
     {
         _camera = GetComponent<Camera>();
+    }
+    void Start()
+    {
+        //_camera = GetComponent<Camera>();
         
-        ConstructShadowMask();
-        ConstructObjectMask();
+        //ConstructShadowMask();
         
         _blitMaterial = new Material(Shader.Find("Hidden/WhiteShadowBlit"));
     }
 
+    void ConstructMask(ref CommandBuffer cmdDrawMask,
+                       ref RenderTexture maskTexture,
+                       List<Renderer> renders,
+                       Material material)
+    {
+        // 1. 移除旧 CB
+        if (cmdDrawMask != null)
+            _camera.RemoveCommandBuffer(CameraEvent.AfterDepthTexture, cmdDrawMask);
+
+        // 2. 重建 RT
+        if (maskTexture != null)
+            maskTexture.Release();
+        maskTexture = new RenderTexture(maskWidth, maskHeight, 0,
+            RenderTextureFormat.R8, RenderTextureReadWrite.Linear);
+        maskTexture.Create();
+
+        // 3. 重建 CB
+        cmdDrawMask?.Dispose();  // 彻底释放
+        cmdDrawMask = new CommandBuffer { name = "BuildMask" };
+        cmdDrawMask.SetRenderTarget(maskTexture);
+        cmdDrawMask.ClearRenderTarget(true, true, Color.black);
+
+        foreach (Renderer r in renders)
+        {
+            for (int i = 0; i < r.sharedMaterials.Length; ++i)
+                cmdDrawMask.DrawRenderer(r, material, i, 0);
+        }
+
+        // 4. 重新绑定
+        _camera.AddCommandBuffer(CameraEvent.AfterDepthTexture, cmdDrawMask);
+    }
+
     void ConstructShadowMask()
     {
-        // 1. ShadowMask RT
-        _shadowMask = new RenderTexture(maskWidth, maskHeight, 0,
-            RenderTextureFormat.R8, RenderTextureReadWrite.Linear);
-        _shadowMask.Create();
-
-        // 2. 用来画 ObjectMask 的 CommandBuffer
-        _cbDrawShadowMask = new CommandBuffer { name = "BuildShadowMask" };
-        _cbDrawShadowMask.SetRenderTarget(_shadowMask);
-        _cbDrawShadowMask.ClearRenderTarget(true, true, Color.black);
-        
-        List<Renderer> renders = new List<Renderer>(FindObjectsOfType<Renderer>());
-        
-        
-        // 3. 遍历可接受阴影物体，绘制阴影
-        
-        _receiverMat =  new Material(whiteReceiverShader);
-        foreach (Renderer r in renders)
+        List<Renderer> allRenders = new List<Renderer>(FindObjectsOfType<Renderer>());
+        List<Renderer> renders = new List<Renderer>();
+        foreach (Renderer r in allRenders)
         {
             if (r.receiveShadows && r.sharedMaterial != null && r.sharedMaterial.renderQueue <= 2500)
             {
-                for (int i = 0; i < r.sharedMaterials.Length; ++i)
-                    _cbDrawShadowMask.DrawRenderer(r, _receiverMat, i, 0);
+                renders.Add(r);
             }
         }
         
-
-        // 4. 把 CommandBuffer 插到相机里
-        _camera.AddCommandBuffer(CameraEvent.AfterDepthTexture, _cbDrawShadowMask);
+        ConstructMask(ref _cbDrawShadowMask, ref _shadowMask, renders, new Material(whiteReceiverShader));
     }
     
     void ConstructObjectMask()
     {
-        // 1. ObjectMask RT
-        _objectMask = new RenderTexture(maskWidth, maskHeight, 0,
-            RenderTextureFormat.R8, RenderTextureReadWrite.Linear);
-        _objectMask.Create();
-
-        // 2. 用来画 ShadowMask 的 CommandBuffer
-        _cbDrawObjectMask = new CommandBuffer { name = "BuildObjectMask" };
-        _cbDrawObjectMask.SetRenderTarget(_objectMask);
-        _cbDrawObjectMask.ClearRenderTarget(true, true, Color.black);
-        
-        
-        // 3. 遍历所有 Renderer，把能投射阴影的再画一次
-        _casterMat = new Material(whiteCasterShader);
-        List<Renderer> renders = new List<Renderer>(FindObjectsOfType<Renderer>());
-        
-        foreach (Renderer r in renders)
+        List<Renderer> allRenders = new List<Renderer>(FindObjectsOfType<Renderer>());
+        List<Renderer> renders = new List<Renderer>();
+        foreach (Renderer r in allRenders)
         {
-            // 只处理不透明且投射阴影的
             if ((r.shadowCastingMode != ShadowCastingMode.Off) &&
                 (r.sharedMaterial != null) &&
                 (r.sharedMaterial.renderQueue <= 2500))
             {
-                for (int i = 0; i < r.sharedMaterials.Length; ++i)
-                    _cbDrawObjectMask.DrawRenderer(r, _casterMat, i, 0);
+                renders.Add(r);
             }
         }
         
+        ConstructMask(ref _cbDrawObjectMask, ref _objectMask, renders, new Material(whiteCasterShader));
+    }
 
-        // 4. 把 CommandBuffer 插到相机里
-        _camera.AddCommandBuffer(CameraEvent.AfterDepthTexture, _cbDrawObjectMask);
+    public void ConstructGivenObjectMask(GameObject go)
+    {
+        if (go == null)
+        {
+            Debug.LogError("Object to construct is null");
+            return;
+        }
+        else
+        {
+            Debug.Log("Construct mask for " + go.name);
+        }
+        
+        List<Renderer> renders = new List<Renderer>(go.GetComponentsInChildren<Renderer>());
+        ConstructMask(ref _cbDrawObjectMask, ref _objectMask, renders, new Material(whiteCasterShader));
+    }
+    
+    public void ConstructGivenShadowMask(GameObject go)
+    {
+        if (go == null)
+        {
+            Debug.LogError("Object to construct is null");
+            return;
+        }
+        else
+        {
+            Debug.Log("Construct mask for " + go.name);
+        }
+        
+        List<Renderer> renders = new List<Renderer>(go.GetComponentsInChildren<Renderer>());
+        ConstructMask(ref _cbDrawShadowMask, ref _shadowMask, renders, new Material(whiteReceiverShader));
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dst)
