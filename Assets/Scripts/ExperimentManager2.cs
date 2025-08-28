@@ -13,15 +13,11 @@ public class ExperimentManager2 : MonoBehaviour
     private float m_ApearTimePerModel  = 2f;  // How long each model stays visible
 
     [Header("Model Names (must match scene hierarchy)")]
-    private string[] m_ModelNames = new string[]
-    {
-        "Teapot", "Monkey", "Dragon", "Buddha", "Bunny", "Sphere", "Torus", "Intergalactic_Spaceship-(Wavefront)", "Only_Spider_with_Animations_Export",
-        "rose2",
-    };
+    private string[] m_ModelNames =  { "Sphere", "Teapot", "Dragon" };
 
     private GameObject[] m_Models;         // Found models
     private Queue<GameObject> m_ShowQueue; // Upcoming models to display
-    private GameObject m_CurrentActive = null;    // Currently active model
+    private GameObject[] m_CurrentActiveModels = new GameObject[2];
     
     // 拟合的系数
     public Vector4[] m_KR = new Vector4[3] { new Vector4(-4.078462e-04f, -9.498750e-03f, 1.025567e+00f, 1.0f), new Vector4(), new Vector4() };
@@ -43,17 +39,23 @@ public class ExperimentManager2 : MonoBehaviour
 
     private void Awake()
     {
-        m_Models = new GameObject[m_ModelNames.Length];
-        for (int i = 0; i < m_Models.Length; i++)
+        m_Models = new GameObject[m_ModelNames.Length * 2];
+        for (int i = 0; i < m_ModelNames.Length; i++)
         {
-            m_Models[i] = GameObject.Find(m_ModelNames[i]);
-            if (m_Models[i] == null)
+            m_Models[2 * i] = GameObject.Find(m_ModelNames[i]);
+            m_Models[2 * i + 1] = GameObject.Find(m_ModelNames[i] + " (1)");
+            if (m_Models[2 * i] == null)
             {
                 Debug.LogError("Model not found: " + m_ModelNames[i]);
             }
+            else if (m_Models[2 * i + 1] == null)
+            {
+                Debug.LogError("Model not found: " + m_ModelNames[i] + " (1)");
+            }
             else
             {
-                m_Models[i].SetActive(false);
+                m_Models[2 * i].SetActive(false);
+                m_Models[2 * i + 1].SetActive(false);
             }
         }
     }
@@ -64,16 +66,19 @@ public class ExperimentManager2 : MonoBehaviour
         // Now it's implemented in Awake()
 
         // 2. Build randomized queue
-        BuildRandomQueue();
+        //BuildRandomQueue();
 
         // 3. Start showing loop
         //StartCoroutine(ShowLoop());
         
-        m_CurrentActive = m_ShowQueue.Count > 0 ? m_ShowQueue.Dequeue() : null;
-        if(m_CurrentActive)m_CurrentActive.SetActive(true);
-        else Debug.LogError("Initial Current active is null");
-
-        SetCameraWidthAndHeight();
+        BuildCertainQueue();
+        
+        m_CurrentActiveModels = GetTwoModelsFromShowQueue(ref m_ShowQueue);
+        
+        m_CurrentActiveModels[0].SetActive(true);
+        m_CurrentActiveModels[1].SetActive(true);
+        SwapTransformRandomly(m_CurrentActiveModels[0], m_CurrentActiveModels[1]);
+        //SetCameraWidthAndHeight();
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
         Debug.Log("Starting");
@@ -84,26 +89,63 @@ public class ExperimentManager2 : MonoBehaviour
         else
         {
             Debug.Log("White Shadow PostProcess found");
-            m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActive);
+            m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_CurrentActiveModels);
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
         }
         
         //LoadImgToBackgroundCamera("Backgrounds/Small8");
     }
 
-    private void LoadImgToBackgroundCamera(string imgPath)
+    void SwapTransformRandomly(GameObject go1, GameObject go2)
     {
-        
-        Texture2D srcTex = Resources.Load<Texture2D>(imgPath);
-        if (srcTex == null)
+        int coin = UnityEngine.Random.value < 0.5f ? 0 : 1;
+        if (coin == 1)
         {
-            Debug.LogError("Failed to find img at ：" + imgPath);
-            return;
+            Debug.Log("Swap");
+            // 缓存 go1 的原始变换数据
+            Vector3    pos1 = go1.transform.position;
+            Quaternion rot1 = go1.transform.rotation;
+            Vector3    scl1 = go1.transform.localScale;
+
+            // 把 go1 换成 go2 的变换
+            go1.transform.position = go2.transform.position;
+            go1.transform.rotation = go2.transform.rotation;
+            go1.transform.localScale = go2.transform.localScale;
+
+            // 把 go2 换成 go1 的原始变换
+            go2.transform.position = pos1;
+            go2.transform.rotation = rot1;
+            go2.transform.localScale = scl1;
+        }
+        else
+        {
+            Debug.Log("Not Swap");
+        }
+    }
+
+    private GameObject[] GetTwoModelsFromShowQueue(ref Queue<GameObject> queue)
+    {
+        GameObject[] gameObjects = new GameObject[2];
+        if (queue.Count > 0)
+        {
+            gameObjects[0] = queue.Dequeue();
+        }
+        else
+        {
+            Debug.LogError("No Models Found in Queue");
         }
         
-        // copy
-        Graphics.Blit(srcTex, m_BackgroundCamera.targetTexture);
+        if (queue.Count > 0)
+        {
+            gameObjects[1] = queue.Dequeue();
+        }
+        else
+        {
+            Debug.LogError("No Models Found in Queue");
+        }
+        return gameObjects;
     }
+    
 
     private void SetCameraRTWidthAndHeight(Camera camera, int targetWidth, int targetHeight)
     {
@@ -185,15 +227,20 @@ public class ExperimentManager2 : MonoBehaviour
         SetCoefficient();
         if (m_ShowQueue.Count > 0 && Input.GetKeyDown(KeyCode.Space))
         {
-            m_CurrentActive.SetActive(false);
-            m_CurrentActive = m_ShowQueue.Dequeue();
-            m_CurrentActive.SetActive(true);
+            m_CurrentActiveModels[0].SetActive(false);
+            m_CurrentActiveModels[1].SetActive(false);
             
-            m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActive);
+            m_CurrentActiveModels = GetTwoModelsFromShowQueue(ref m_ShowQueue);
+            
+            m_CurrentActiveModels[0].SetActive(true);
+            m_CurrentActiveModels[1].SetActive(true);
+            SwapTransformRandomly(m_CurrentActiveModels[0], m_CurrentActiveModels[1]);
+            
+            m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_CurrentActiveModels);
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
         }
-        if(Input.GetKeyDown(KeyCode.R))
-            SaveRTToDisk();
+        //if(Input.GetKeyDown(KeyCode.R))
+            //SaveRTToDisk();
     }
     
     void SetCoefficient()
@@ -217,6 +264,15 @@ public class ExperimentManager2 : MonoBehaviour
             antiDistortion.m_KR = m_KR[m_CoeffIdx];
             antiDistortion.m_KG = m_KG[m_CoeffIdx];
             antiDistortion.m_KB = m_KB[m_CoeffIdx]; 
+        }
+    }
+
+    private void BuildCertainQueue()
+    {
+        m_ShowQueue = new Queue<GameObject>();
+        for (int i = 0; i < m_Models.Length; i++)
+        {
+            m_ShowQueue.Enqueue(m_Models[i]);
         }
     }
 
@@ -257,31 +313,5 @@ public class ExperimentManager2 : MonoBehaviour
             // Remove the chosen instance from the master list.
             masterList.RemoveAt(chosenIndex);
         }
-    }
-
-    /// <summary>
-    /// Coroutine that displays models one by one
-    /// </summary>
-    private IEnumerator ShowLoop()
-    {
-        while (m_ShowQueue.Count > 0)
-        {
-            // Hide previous model
-            if (m_CurrentActive != null)
-                m_CurrentActive.SetActive(false);
-
-            // Show next model
-            m_CurrentActive = m_ShowQueue.Dequeue();
-            m_CurrentActive.SetActive(true);
-
-            // Wait
-            yield return new WaitForSeconds(m_ApearTimePerModel);
-        }
-
-        // All done, hide last model
-        if (m_CurrentActive != null)
-            m_CurrentActive.SetActive(false);
-
-        Debug.Log("All models have been displayed.");
     }
 }

@@ -15,6 +15,9 @@ public class WhiteShadowPostProcess : MonoBehaviour
     public int maskWidth;
     public int maskHeight;
     
+    public Vector2 offset  = Vector2.zero; // mask位移
+    public Vector2 scale   = Vector2.one;  // mask缩放
+    
     private Material     _casterMat;
     private Material     _receiverMat; 
     
@@ -26,6 +29,9 @@ public class WhiteShadowPostProcess : MonoBehaviour
     
     private static readonly int ShadowMaskID = Shader.PropertyToID("_ShadowMaskTex");
     private static readonly int ObjectMaskID = Shader.PropertyToID("_ObjectMaskTex");
+    private static readonly int OffsetID = Shader.PropertyToID("_Offset");
+    private static readonly int ScaleID = Shader.PropertyToID("_Scale");
+    
     
     private Material      _blitMaterial;
     private Camera _camera;
@@ -109,6 +115,26 @@ public class WhiteShadowPostProcess : MonoBehaviour
         ConstructMask(ref _cbDrawObjectMask, ref _objectMask, renders, new Material(whiteCasterShader));
     }
 
+    public void ConstructGivenObjectsMask(GameObject[] gameObjects)
+    {
+        if (gameObjects.Length == 0)
+        {
+            Debug.LogError("Objects to construct is null");
+            return;
+        }
+        else
+        {
+            Debug.Log("Construct mask for array of " + gameObjects.Length);
+        }
+
+        List<Renderer> renders = new List<Renderer>();
+        foreach (GameObject go in gameObjects)
+        {
+            renders.AddRange(new List<Renderer>(go.GetComponentsInChildren<Renderer>()));
+        }
+        ConstructMask(ref _cbDrawObjectMask, ref _objectMask, renders, new Material(whiteCasterShader));
+    }
+    
     public void ConstructGivenObjectMask(GameObject go)
     {
         if (go == null)
@@ -143,8 +169,12 @@ public class WhiteShadowPostProcess : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dst)
     {
+        
         _blitMaterial.SetTexture(ShadowMaskID, _shadowMask);
         _blitMaterial.SetTexture(ObjectMaskID, _objectMask);
+        
+        _blitMaterial.SetVector(OffsetID, new Vector4(offset.x, offset.y, 0, 0));
+        _blitMaterial.SetVector(ScaleID,  new Vector4(scale.x,  scale.y,  0, 0));
         Graphics.Blit(src, dst, _blitMaterial);
     }
 
@@ -161,4 +191,5 @@ public class WhiteShadowPostProcess : MonoBehaviour
         if (_receiverMat != null) DestroyImmediate(_receiverMat);
         if (_blitMaterial != null) DestroyImmediate(_blitMaterial);
     }
+    
 }
