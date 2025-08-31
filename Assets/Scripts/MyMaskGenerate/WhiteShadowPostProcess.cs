@@ -17,6 +17,8 @@ public class WhiteShadowPostProcess : MonoBehaviour
     
     public Vector2 offset  = Vector2.zero; // mask位移
     public Vector2 scale   = Vector2.one;  // mask缩放
+    public bool flipX;
+    public bool flipY;
     
     private Material     _casterMat;
     private Material     _receiverMat; 
@@ -175,6 +177,9 @@ public class WhiteShadowPostProcess : MonoBehaviour
         
         _blitMaterial.SetVector(OffsetID, new Vector4(offset.x, offset.y, 0, 0));
         _blitMaterial.SetVector(ScaleID,  new Vector4(scale.x,  scale.y,  0, 0));
+        
+        _blitMaterial.SetFloat("_FlipX", flipX ? 1 : 0);
+        _blitMaterial.SetFloat("_FlipY", flipY ? 1 : 0);
         Graphics.Blit(src, dst, _blitMaterial);
     }
 

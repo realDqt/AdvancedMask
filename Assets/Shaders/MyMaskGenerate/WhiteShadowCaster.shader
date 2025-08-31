@@ -15,18 +15,20 @@ Shader "Hidden/WhiteShadowCaster"
             struct v2f
             {
                 float4 pos : SV_POSITION;
+                fixed4 color : COLOR;
             };
 
-            v2f vert(appdata_base v)
+            v2f vert(appdata_full v)
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
+                o.color = v.color;
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
-                return fixed4(1,0,0,0);   // 任意非 0 值都行，反正只写 R
+                return i.color.a > 0.001 ?fixed4(1,0,0,0) : fixed4(0, 0, 0, 0);   // 任意非 0 值都行，反正只写 R
             }
             ENDCG
         }

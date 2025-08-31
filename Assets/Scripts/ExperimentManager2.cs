@@ -13,7 +13,7 @@ public class ExperimentManager2 : MonoBehaviour
     private float m_ApearTimePerModel  = 2f;  // How long each model stays visible
 
     [Header("Model Names (must match scene hierarchy)")]
-    private string[] m_ModelNames =  { "Sphere", "Teapot", "Dragon" };
+    private string[] m_ModelNames =  { "Sphere", "Teapot", "sofa_1", "SM_Veh_Mech_06", "Acacia 2"};
 
     private GameObject[] m_Models;         // Found models
     private Queue<GameObject> m_ShowQueue; // Upcoming models to display
@@ -58,6 +58,9 @@ public class ExperimentManager2 : MonoBehaviour
                 m_Models[2 * i + 1].SetActive(false);
             }
         }
+
+        //SetCameraWidthAndHeight(1920, 1080);
+        AssignCameraToDisplay();
     }
 
     private void Start()
@@ -81,7 +84,7 @@ public class ExperimentManager2 : MonoBehaviour
         //SetCameraWidthAndHeight();
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
-        Debug.Log("Starting");
+        Debug.Log("Starting"); 
         if (m_WhiteShadowPostProcess == null)
         {
             Debug.LogError("White Shadow PostProcess not found");
@@ -162,11 +165,11 @@ public class ExperimentManager2 : MonoBehaviour
         camera.targetTexture = rt;
     }
 
-    private void SetCameraWidthAndHeight()
+    private void SetCameraWidthAndHeight(int targetWidth, int targetHeight)
     {
-        SetCameraRTWidthAndHeight(m_RawCamera, 1074, 604);
-        SetCameraRTWidthAndHeight(m_MaskCamera, 1074, 604);
-        SetCameraRTWidthAndHeight(m_BackgroundCamera, 1074, 604);
+        SetCameraRTWidthAndHeight(m_RawCamera, targetWidth, targetHeight);
+        SetCameraRTWidthAndHeight(m_MaskCamera, targetWidth, targetHeight);
+        SetCameraRTWidthAndHeight(m_BackgroundCamera, targetWidth, targetHeight);
     }
 
     private void LogCameraWidthAndHeight()
@@ -313,5 +316,29 @@ public class ExperimentManager2 : MonoBehaviour
             // Remove the chosen instance from the master list.
             masterList.RemoveAt(chosenIndex);
         }
+    }
+
+    private void AssignCameraToDisplay()
+    {
+        int monitorCount = Display.displays.Length;   // 等于几就表示连了几台
+        for (int i = 0; i < monitorCount; ++i)
+        {
+            Debug.Log($"显示器 {i} 分辨率 {Display.displays[i].renderingWidth}×{Display.displays[i].renderingHeight}");
+        }
+        
+        // 1. 激活所有可用显示器
+        for (int i = 0; i < Display.displays.Length; ++i)
+        {
+            // Windows 可自定义分辨率；macOS/Linux 会直接用系统分辨率
+            Display.displays[i].Activate(
+                Display.displays[i].systemWidth,
+                Display.displays[i].systemHeight,
+                60);
+        }
+
+        // 三台显示器?
+        m_RawCamera.targetDisplay = 0;
+        m_MaskCamera.targetDisplay = 1;
+        m_BackgroundCamera.targetDisplay = 2;
     }
 }
