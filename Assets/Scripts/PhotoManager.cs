@@ -7,7 +7,7 @@ public class PhotoManager : MonoBehaviour
 {
 
     [Header("Model Names (must match scene hierarchy)")]
-    private string[] m_ModelNames =  { "Desk", "Laocoon_Statue", "Armadillo", "sofa_1", "SM_Veh_Mech_01", "Acacia 2"};
+    private string[] m_ModelNames =  { "Maple 1", "FixedBigClock", "Desk", "Laocoon_Statue", "Armadillo", "sofa_1", "SM_Veh_Mech_01", "Acacia 2"};
 
     private GameObject[] m_Models;         // Found models
     private Queue<GameObject> m_ShowQueue; // Upcoming models to display
@@ -17,7 +17,7 @@ public class PhotoManager : MonoBehaviour
 
     public Camera m_RawCamera;
 
-    private string m_RawRTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\RawRT.png";
+    private string m_RawRTSavePath = "D:\\DALAB\\Research\\Output\\RawRT.png";
     
 
     private void Awake()

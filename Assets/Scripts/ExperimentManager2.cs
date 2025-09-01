@@ -13,7 +13,7 @@ public class ExperimentManager2 : MonoBehaviour
     private float m_ApearTimePerModel  = 2f;  // How long each model stays visible
 
     [Header("Model Names (must match scene hierarchy)")]
-    private string[] m_ModelNames =  { "Sphere", "Teapot", "sofa_1", "SM_Veh_Mech_06", "Acacia 2"};
+    private string[] m_ModelNames =  { "Sphere", "Teapot", "sofa_1", "SM_Veh_Mech_06", "Maple 1"};
 
     private GameObject[] m_Models;         // Found models
     private Queue<GameObject> m_ShowQueue; // Upcoming models to display
