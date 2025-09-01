@@ -58,7 +58,7 @@ public class ExperimentManager3 : MonoBehaviour
 
         AssignCameraToDisplay();
 
-        SetCameraRTWidthAndHeight(m_RawCamera, 1920, 1080);
+        //SetCameraRTWidthAndHeight(m_RawCamera, 1920, 1080);
     }
 
     private void Start()
@@ -207,7 +207,7 @@ public class ExperimentManager3 : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.R))
         {
-            SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
+            //SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
         }
     }
     

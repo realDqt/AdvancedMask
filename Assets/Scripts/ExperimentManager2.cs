@@ -10,6 +10,22 @@ using Random = UnityEngine.Random;
 public class ExperimentManager2 : MonoBehaviour
 {
     
+    /// <summary>
+    /// 实验阶段枚举
+    /// </summary>
+    public enum ExperimentPhase
+    {
+        /// <summary>
+        /// 预实验阶段
+        /// </summary>
+        PreExperiment,
+
+        /// <summary>
+        /// 正式实验阶段
+        /// </summary>
+        FormalExperiment
+    }
+    
     struct PreExperimentInfo
     {
         public int m_CurTimes;
@@ -23,6 +39,10 @@ public class ExperimentManager2 : MonoBehaviour
         public string m_CurTimeStr;
         public int m_ModelID;
     }
+
+    private string m_PreExperimentModelName = "Capsule";
+    private GameObject[] m_PreExperimentModels = new GameObject[2];
+    private int m_CurPreTimes = 1;
     
     [Header("Settings")]
     public int  m_AppearCountPerModel = 2;   // How many times each model should appear
@@ -67,6 +87,8 @@ public class ExperimentManager2 : MonoBehaviour
     private PostExperimentInfo[] m_PostExperimentInfos;
     private int m_CurModelId = 0;
     
+    private ExperimentPhase m_Phase = ExperimentPhase.PreExperiment;
+    
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length * 2];
@@ -91,11 +113,7 @@ public class ExperimentManager2 : MonoBehaviour
 
         //SetCameraWidthAndHeight(1920, 1080);
         AssignCameraToDisplay();
-
-        int totalTimes = m_ModelNames.Length * m_IntensityCount * m_AppearCountPerModel;
-        Debug.Log(m_ModelNames.Length + " " + m_IntensityCount + " " + m_AppearCountPerModel);
-        m_PostExperimentInfos = new PostExperimentInfo[totalTimes];
-        Debug.Log("Start Experiment, Total Times = " +  totalTimes);
+        
     }
 
     private PreExperimentInfo GetPreExperimentInfo(int curTime, int curIntensity)
@@ -159,6 +177,46 @@ public class ExperimentManager2 : MonoBehaviour
 
         // 3. Start showing loop
         //StartCoroutine(ShowLoop());
+
+        InitialPreExperiment();
+
+        //LoadImgToBackgroundCamera("Backgrounds/Small8");
+    }
+
+    private void InitialPreExperiment()
+    {
+        m_Phase = ExperimentPhase.PreExperiment;
+        m_CurIntensity = 1;
+        m_CurAngle = GetPhysicalDeviceAngle();
+        
+        m_PreExperimentModels[0] = GameObject.Find(m_PreExperimentModelName);
+        if (m_PreExperimentModels[0] == null)
+        {
+            Debug.LogError("Pre Experiment Model not found: " + m_PreExperimentModelName);
+        }
+        m_PreExperimentModels[0].SetActive(true);
+        
+        m_PreExperimentModels[1] = GameObject.Find(m_PreExperimentModelName + " (1)");
+        if (m_PreExperimentModels[1] == null)
+        {
+            Debug.LogError("Pre Experiment Model not found: " + m_PreExperimentModelName + " (1)");
+        }
+        m_PreExperimentModels[1].SetActive(true);
+
+        Debug.Log("Start Pre Experiment");
+        InfluenceSceneByIntensity(m_CurIntensity);
+    }
+
+    private void InitialFormalExperiment()
+    {
+        m_Phase = ExperimentPhase.FormalExperiment;
+        m_CurIntensity = 1;
+        m_CurAngle = GetPhysicalDeviceAngle();
+        
+        int totalTimes = m_ModelNames.Length * m_IntensityCount * m_AppearCountPerModel;
+        Debug.Log(m_ModelNames.Length + " " + m_IntensityCount + " " + m_AppearCountPerModel);
+        m_PostExperimentInfos = new PostExperimentInfo[totalTimes];
+        Debug.Log("Start Formal Experiment, Total Times = " +  totalTimes);
         
         BuildCertainQueue();
         
@@ -184,8 +242,7 @@ public class ExperimentManager2 : MonoBehaviour
 
         LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurIntensity));
         InfluenceSceneByIntensity(m_CurIntensity);
-
-        //LoadImgToBackgroundCamera("Backgrounds/Small8");
+        
     }
 
     void SwapTransformRandomly(GameObject go1, GameObject go2)
@@ -340,8 +397,49 @@ public class ExperimentManager2 : MonoBehaviour
     {
         //LogCameraWidthAndHeight();
         //SetCoefficient();
+
+
+        if (m_Phase == ExperimentPhase.PreExperiment)
+        {
+            HandlePreExperiment();
+        }
+        else if(m_Phase == ExperimentPhase.FormalExperiment)
+        {
+            HandleFormalExperiment();
+        }
+
         
-        // ------------------------------切换物体或亮度---------------------------------
+        //if(Input.GetKeyDown(KeyCode.R))
+        //SaveRTToDisk();
+    }
+
+    private void HandlePreExperiment()
+    {
+        // ------------------------------改变亮度---------------------------------
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            ++m_CurIntensity;
+            if (m_CurIntensity > m_IntensityCount)
+            {
+                Debug.Log("Pre Experiment is ending");
+                m_PreExperimentModels[0].SetActive(false);
+                m_PreExperimentModels[1].SetActive(false);
+                
+                InitialFormalExperiment();
+                
+                return;
+            }
+            InfluenceSceneByIntensity(m_CurIntensity);
+        }
+        
+        // ------------------------------调整偏振片---------------------------------
+        AdjustPolarizerAngle();
+    }
+
+    
+    private void HandleFormalExperiment()
+    {
+           // ------------------------------切换物体或亮度---------------------------------
         if (Input.GetKeyDown(KeyCode.Space))
         {
             // 按下空格表示用户已经调整偏振片角度到合适的值， 记录当前角度，并进行下一个模型or亮度
@@ -402,6 +500,11 @@ public class ExperimentManager2 : MonoBehaviour
         
         
         // ------------------------------调整偏振片---------------------------------
+        AdjustPolarizerAngle();
+    }
+
+    void AdjustPolarizerAngle()
+    {
         // 左右粗调 上下细调整
         // 左加右减 上加下减
         if (Input.GetKeyDown(KeyCode.LeftArrow))
@@ -425,9 +528,6 @@ public class ExperimentManager2 : MonoBehaviour
             Debug.Log("Fine Adjustment: CurAngle = " + m_CurAngle);
             SetPhysicalDeviceAngle(m_CurAngle);
         }
-        
-        //if(Input.GetKeyDown(KeyCode.R))
-            //SaveRTToDisk();
     }
     
     void SetCoefficient()
