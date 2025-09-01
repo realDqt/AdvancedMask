@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
+using System.IO;
 
 public class ExperimentManager3 : MonoBehaviour
 {
@@ -24,6 +25,8 @@ public class ExperimentManager3 : MonoBehaviour
     [FormerlySerializedAs("inputField")] public TMP_InputField m_InputField;
     
     private WhiteShadowPostProcess m_WhiteShadowPostProcess;
+
+    private string m_RawRTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\RawRT.png";
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length];
@@ -55,6 +58,7 @@ public class ExperimentManager3 : MonoBehaviour
 
         AssignCameraToDisplay();
 
+        SetCameraRTWidthAndHeight(m_RawCamera, 1920, 1080);
     }
 
     private void Start()
@@ -63,7 +67,7 @@ public class ExperimentManager3 : MonoBehaviour
         m_CurrentActiveModel = m_ShowQueue.Dequeue();
         m_CurrentActiveModel.SetActive(true);
         AlignAllCamerasWithGo(m_CurrentActiveModel);
-        ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[0]);
+        ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[2]);
         
         
         
@@ -125,9 +129,46 @@ public class ExperimentManager3 : MonoBehaviour
         camera.targetTexture = rt;
     }
 
-    private void SetCameraWidthAndHeight()
+    private void SetCameraWidthAndHeight(int targetWidth, int targetHeight)
     {
-        SetCameraRTWidthAndHeight(m_RawCamera, 1074, 604);
+        SetCameraRTWidthAndHeight(m_RawCamera, targetWidth, targetWidth);
+    }
+    
+    private void SaveCameraRTToDisk(Camera camera, string path)
+    {
+        RenderTexture.active = camera.targetTexture;
+        Texture2D tex = new Texture2D(
+            camera.targetTexture.width,
+            camera.targetTexture.height,
+            TextureFormat.RGBA32,
+            false
+        );
+        tex.ReadPixels(
+            new Rect(0, 0,
+                camera.targetTexture.width,
+                camera.targetTexture.height),
+            0, 0
+        );
+        tex.Apply();
+        RenderTexture.active = null;
+
+        /* ---------- 关键：把透明像素填成黑色 ---------- */
+        Color32[] pixels = tex.GetPixels32();
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (pixels[i].a == 0)          // 完全透明
+            {
+                pixels[i] = new Color32(0, 0, 0, 255); // 纯黑、不透明
+            }
+        }
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        /* ------------------------------------------------ */
+
+        byte[] bytes = tex.EncodeToPNG();
+        File.WriteAllBytes(path, bytes);
+        Debug.Log($"RT 已保存为 PNG：{path}");
+        Destroy(tex);
     }
 
     private void LogCameraWidthAndHeight()
@@ -149,7 +190,7 @@ public class ExperimentManager3 : MonoBehaviour
             m_CurrentActiveModel = m_ShowQueue.Dequeue();
             m_CurrentActiveModel.SetActive(true);
             
-            ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[0]);
+            ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[2]);
             
             m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActiveModel.transform.GetChild(0).gameObject);
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_CurrentActiveModel.transform.GetChild(1).gameObject);
@@ -162,6 +203,11 @@ public class ExperimentManager3 : MonoBehaviour
         {
             m_InputField.transform.parent.gameObject.SetActive(true);
             m_InputField.text = "Your input is " + digit;
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
         }
     }
     

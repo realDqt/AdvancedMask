@@ -126,7 +126,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
         }
         else
         {
-            Debug.Log("Construct mask for array of " + gameObjects.Length);
+            //Debug.Log("Construct mask for array of " + gameObjects.Length);
         }
 
         List<Renderer> renders = new List<Renderer>();
@@ -162,7 +162,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
         }
         else
         {
-            Debug.Log("Construct mask for " + go.name);
+            //Debug.Log("Construct mask for " + go.name);
         }
         
         List<Renderer> renders = new List<Renderer>(go.GetComponentsInChildren<Renderer>());

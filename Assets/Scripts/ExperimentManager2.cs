@@ -6,11 +6,26 @@ using System.IO;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
+
 public class ExperimentManager2 : MonoBehaviour
 {
+    
+    struct PreExperimentInfo
+    {
+        public int m_CurTimes;
+        public int m_CurIntensity;
+    }
+
+    struct PostExperimentInfo
+    {
+        public float m_CurAngle;
+        public int m_CurIntensity;
+        public string m_CurTimeStr;
+        public int m_ModelID;
+    }
+    
     [Header("Settings")]
-    public int  m_AppearCountPerModel = 3;   // How many times each model should appear
-    private float m_ApearTimePerModel  = 2f;  // How long each model stays visible
+    public int  m_AppearCountPerModel = 2;   // How many times each model should appear
 
     [Header("Model Names (must match scene hierarchy)")]
     private string[] m_ModelNames =  { "Sphere", "Teapot", "sofa_1", "SM_Veh_Mech_06", "Maple 1"};
@@ -37,6 +52,21 @@ public class ExperimentManager2 : MonoBehaviour
 
     private WhiteShadowPostProcess m_WhiteShadowPostProcess;
 
+    private int m_CurIntensity = 1; // 当前亮度，取值1 2 3 4，代表四个不同亮度等级
+    private int m_IntensityCount = 4; // 总共的亮度种类， 暂时写死是4
+    
+    private int m_CurTimes = 1; // 当前实验进度
+
+    public float m_FineAngleStep = 5.0f;    // 细调时，每次偏振片变化角度
+    public float m_CoarseAngleStep = 10.0f; // 粗调时，每次偏振片变化角度
+    private float m_CurAngle = 0.0f;        // 当前偏振片夹角
+
+    private string m_SavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\ExperimentRes.csv";
+    
+    
+    private PostExperimentInfo[] m_PostExperimentInfos;
+    private int m_CurModelId = 0;
+    
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length * 2];
@@ -61,7 +91,63 @@ public class ExperimentManager2 : MonoBehaviour
 
         //SetCameraWidthAndHeight(1920, 1080);
         AssignCameraToDisplay();
+
+        int totalTimes = m_ModelNames.Length * m_IntensityCount * m_AppearCountPerModel;
+        Debug.Log(m_ModelNames.Length + " " + m_IntensityCount + " " + m_AppearCountPerModel);
+        m_PostExperimentInfos = new PostExperimentInfo[totalTimes];
+        Debug.Log("Start Experiment, Total Times = " +  totalTimes);
     }
+
+    private PreExperimentInfo GetPreExperimentInfo(int curTime, int curIntensity)
+    {
+        PreExperimentInfo experimentInfo = new PreExperimentInfo();
+        experimentInfo.m_CurTimes = curTime;
+        experimentInfo.m_CurIntensity = curIntensity;
+        return experimentInfo;
+    }
+    
+    private void LogPreExperimentInfo(PreExperimentInfo experimentInfo)
+    {
+        // 开始打印
+        Debug.Log("Log Pre Experiment Info for " + experimentInfo.m_CurTimes + " Begin:");
+        
+        // 当前实验进度
+        int totalTimes = m_ModelNames.Length * m_IntensityCount * m_AppearCountPerModel;;
+        Debug.Log("Progress: " + experimentInfo.m_CurTimes + " / " + totalTimes);
+        
+        // 当前亮度
+        Debug.Log("Current Intensity: " + experimentInfo.m_CurIntensity);
+        
+        // 结束打印
+        Debug.Log("Log Pre Experiment Info for " + experimentInfo.m_CurTimes + " End");
+    }
+
+    private PostExperimentInfo GetPostExperimentInfo(float curAngle, int curIntensity, string curTimeStr, int curModelID)
+    {
+        PostExperimentInfo experimentInfo = new PostExperimentInfo();
+        experimentInfo.m_CurAngle = curAngle;
+        experimentInfo.m_CurIntensity = curIntensity;
+        experimentInfo.m_CurTimeStr = curTimeStr;
+        experimentInfo.m_ModelID = curModelID;
+        return experimentInfo;
+    }
+
+    private void LogPostExperimentInfo(PostExperimentInfo experimentInfo)
+    {
+        // 开始打印
+        Debug.Log("Log Post Experiment Info for " + (m_CurTimes - 1) + " Begin: ");
+        
+        // 用户最终选择的夹角
+        Debug.Log("Final Angle: " + experimentInfo.m_CurAngle);
+        
+        // 用户选择此夹角时的亮度
+        Debug.Log("Cur Intensity: " + experimentInfo.m_CurIntensity);
+        
+        
+        // 结束打印
+        Debug.Log("Log Post Experiment Info for " + (m_CurTimes - 1) + " End");
+    }
+    
 
     private void Start()
     {
@@ -84,18 +170,21 @@ public class ExperimentManager2 : MonoBehaviour
         //SetCameraWidthAndHeight();
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
-        Debug.Log("Starting"); 
+        //Debug.Log("Starting"); 
         if (m_WhiteShadowPostProcess == null)
         {
             Debug.LogError("White Shadow PostProcess not found");
         }
         else
         {
-            Debug.Log("White Shadow PostProcess found");
+            //Debug.Log("White Shadow PostProcess found");
             m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_CurrentActiveModels);
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
         }
-        
+
+        LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurIntensity));
+        InfluenceSceneByIntensity(m_CurIntensity);
+
         //LoadImgToBackgroundCamera("Backgrounds/Small8");
     }
 
@@ -104,7 +193,7 @@ public class ExperimentManager2 : MonoBehaviour
         int coin = UnityEngine.Random.value < 0.5f ? 0 : 1;
         if (coin == 1)
         {
-            Debug.Log("Swap");
+            //Debug.Log("Swap");
             // 缓存 go1 的原始变换数据
             Vector3    pos1 = go1.transform.position;
             Quaternion rot1 = go1.transform.rotation;
@@ -122,7 +211,7 @@ public class ExperimentManager2 : MonoBehaviour
         }
         else
         {
-            Debug.Log("Not Swap");
+            //Debug.Log("Not Swap");
         }
     }
 
@@ -174,8 +263,8 @@ public class ExperimentManager2 : MonoBehaviour
 
     private void LogCameraWidthAndHeight()
     {
-        Debug.Log("m_DepthCamera0.pixelWidth = " + m_RawCamera.pixelWidth);
-        Debug.Log("m_DepthCamera0.pixelHeight = " + m_RawCamera.pixelHeight);
+        //Debug.Log("m_DepthCamera0.pixelWidth = " + m_RawCamera.pixelWidth);
+        //Debug.Log("m_DepthCamera0.pixelHeight = " + m_RawCamera.pixelHeight);
         //Debug.Log("m_DepthCamera0.targetTexture.width = " + m_DepthCamera0.targetTexture.width);
         //Debug.Log("m_DepthCamera0.targetTexture.height = " + m_DepthCamera0.targetTexture.height);
     }
@@ -224,24 +313,119 @@ public class ExperimentManager2 : MonoBehaviour
        SaveCameraRTToDisk(m_BackgroundCamera, m_BackgrondRTSavePath);
     }
 
+    private void InfluenceSceneByIntensity(int intensity)
+    {
+        // TODO: 使用参数intensity影响当前场景
+        Debug.Log("Influence the Scene by Intensity = " + intensity);
+    }
+
+    private string GetCurTime()
+    {
+        string nowStr = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        return nowStr;
+    }
+    private float GetPhysicalDeviceAngle()
+    {
+        // TODO: 返回偏振片当前角度
+        return 0.0f;
+    }
+
+    private void SetPhysicalDeviceAngle(float angle)
+    {
+        // TODO: 设置偏振片角度
+        Debug.Log("Set Angle = " + angle);
+    }
+    
     private void Update()
     {
-        LogCameraWidthAndHeight();
-        SetCoefficient();
-        if (m_ShowQueue.Count > 0 && Input.GetKeyDown(KeyCode.Space))
+        //LogCameraWidthAndHeight();
+        //SetCoefficient();
+        
+        // ------------------------------切换物体或亮度---------------------------------
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            m_CurrentActiveModels[0].SetActive(false);
-            m_CurrentActiveModels[1].SetActive(false);
+            // 按下空格表示用户已经调整偏振片角度到合适的值， 记录当前角度，并进行下一个模型or亮度
             
-            m_CurrentActiveModels = GetTwoModelsFromShowQueue(ref m_ShowQueue);
             
-            m_CurrentActiveModels[0].SetActive(true);
-            m_CurrentActiveModels[1].SetActive(true);
-            SwapTransformRandomly(m_CurrentActiveModels[0], m_CurrentActiveModels[1]);
+            // 记录偏振片角度
             
-            m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_CurrentActiveModels);
-            m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
+            PostExperimentInfo experimentInfo = GetPostExperimentInfo(m_CurAngle, m_CurIntensity, GetCurTime(), m_CurModelId + 1);
+            LogPostExperimentInfo(experimentInfo);
+            m_PostExperimentInfos[m_CurTimes - 2] = experimentInfo;
+            Debug.Log("Debug!!! cur record idx = " + (m_CurTimes - 2));
+            
+            //SetPhysicalDeviceAngle(m_CurAngle);
+            m_CurAngle = GetPhysicalDeviceAngle();
+            
+            //Debug.Log("Debug!!! m_CurTime = " + m_CurTime);
+            
+            // 判断实验是否已经结束
+            if (m_CurTimes - 2 == m_PostExperimentInfos.Length - 1)
+            {
+                Debug.Log("Experiment is ending! Thank you!");
+                SavePostExperimentInfoToCsv(m_PostExperimentInfos, m_SavePath);
+                return;
+            }
+            
+            if (m_ShowQueue.Count > 0 && m_CurTimes % m_IntensityCount == 1)
+            {
+                // 下一个模型
+                m_CurModelId = (m_CurModelId + 1) % m_ModelNames.Length;
+                
+                // 重置亮度
+                m_CurIntensity = 1;
+                
+                m_CurrentActiveModels[0].SetActive(false);
+                m_CurrentActiveModels[1].SetActive(false);
+            
+                m_CurrentActiveModels = GetTwoModelsFromShowQueue(ref m_ShowQueue);
+            
+                m_CurrentActiveModels[0].SetActive(true);
+                m_CurrentActiveModels[1].SetActive(true);
+                SwapTransformRandomly(m_CurrentActiveModels[0], m_CurrentActiveModels[1]);
+            
+                m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_CurrentActiveModels);
+                m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
+                
+                LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurIntensity));
+                InfluenceSceneByIntensity(m_CurIntensity);
+            }
+            else
+            {
+                // 下一个亮度
+                LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, ++m_CurIntensity));
+                InfluenceSceneByIntensity(m_CurIntensity);
+            }
         }
+        
+        
+        
+        
+        // ------------------------------调整偏振片---------------------------------
+        // 左右粗调 上下细调整
+        // 左加右减 上加下减
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            m_CurAngle += m_CoarseAngleStep;
+            Debug.Log("Coarse Adjustment: CurAngle = " + m_CurAngle);
+            SetPhysicalDeviceAngle(m_CurAngle);
+        }else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            m_CurAngle -= m_CoarseAngleStep;
+            Debug.Log("Coarse Adjustment: CurAngle = " + m_CurAngle);
+            SetPhysicalDeviceAngle(m_CurAngle);
+        }else if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            m_CurAngle += m_FineAngleStep;
+            Debug.Log("Fine Adjustment: CurAngle = " + m_CurAngle);
+            SetPhysicalDeviceAngle(m_CurAngle);
+        }else if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            m_CurAngle -= m_FineAngleStep;
+            Debug.Log("Fine Adjustment: CurAngle = " + m_CurAngle);
+            SetPhysicalDeviceAngle(m_CurAngle);
+        }
+        
         //if(Input.GetKeyDown(KeyCode.R))
             //SaveRTToDisk();
     }
@@ -273,9 +457,12 @@ public class ExperimentManager2 : MonoBehaviour
     private void BuildCertainQueue()
     {
         m_ShowQueue = new Queue<GameObject>();
-        for (int i = 0; i < m_Models.Length; i++)
+        for (int i = 0; i < m_AppearCountPerModel; ++i)
         {
-            m_ShowQueue.Enqueue(m_Models[i]);
+            for (int j = 0; j < m_Models.Length; j++)
+            {
+                m_ShowQueue.Enqueue(m_Models[j]);
+            }
         }
     }
 
@@ -323,7 +510,7 @@ public class ExperimentManager2 : MonoBehaviour
         int monitorCount = Display.displays.Length;   // 等于几就表示连了几台
         for (int i = 0; i < monitorCount; ++i)
         {
-            Debug.Log($"显示器 {i} 分辨率 {Display.displays[i].renderingWidth}×{Display.displays[i].renderingHeight}");
+            //Debug.Log($"显示器 {i} 分辨率 {Display.displays[i].renderingWidth}×{Display.displays[i].renderingHeight}");
         }
         
         // 1. 激活所有可用显示器
@@ -340,5 +527,33 @@ public class ExperimentManager2 : MonoBehaviour
         m_RawCamera.targetDisplay = 0;
         m_MaskCamera.targetDisplay = 1;
         m_BackgroundCamera.targetDisplay = 2;
+    }
+    
+   private void SavePostExperimentInfoToCsv(PostExperimentInfo[] data, string filePath)
+    {
+        if (data == null || data.Length == 0)
+        {
+            Debug.LogWarning("数据为空，未生成 CSV。");
+            return;
+        }
+
+        // 确保目录存在
+        string dir = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+
+        using (StreamWriter sw = new StreamWriter(filePath, false)) // false = 覆盖写入
+        {
+            // 写表头
+            sw.WriteLine("ExperimentID,Angle,Intensity,ModelID,Time");
+
+            // 写数据
+            for (int i = 0; i < data.Length; i++)
+            {
+                sw.WriteLine($"{i + 1},{data[i].m_CurAngle},{data[i].m_CurIntensity},{data[i].m_ModelID},{data[i].m_CurTimeStr}");
+            }
+        }
+
+        Debug.Log($"CSV 已保存至：{filePath}");
     }
 }
