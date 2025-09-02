@@ -1,4 +1,4 @@
-Shader "Custom/CustomTexture"
+Shader "Unlit/LocalSurWrapTexture"
 {
     Properties
     {

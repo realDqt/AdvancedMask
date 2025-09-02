@@ -71,7 +71,7 @@ public class ExperimentManager3 : MonoBehaviour
         m_CurrentActiveModel = m_ShowQueue.Dequeue();
         m_CurrentActiveModel.SetActive(true);
         AlignAllCamerasWithGo(m_CurrentActiveModel);
-        ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[2]);
+        ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[1]);
         
         //SetCameraRTWidthAndHeight(m_BackgroundCamera, m_BackgroundWidth, m_BackgroundHeight);
         
@@ -194,7 +194,7 @@ public class ExperimentManager3 : MonoBehaviour
             m_CurrentActiveModel = m_ShowQueue.Dequeue();
             m_CurrentActiveModel.SetActive(true);
             
-            ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[0]);
+            ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[1]);
             
             m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActiveModel.transform.GetChild(0).gameObject);
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_CurrentActiveModel.transform.GetChild(1).gameObject);
@@ -211,8 +211,8 @@ public class ExperimentManager3 : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.R))
         {
-            //SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
-            SaveCameraRTToDisk(m_BackgroundCamera, m_BackgroundRTSavePath);
+            SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
+            //SaveCameraRTToDisk(m_BackgroundCamera, m_BackgroundRTSavePath);
         }
     }
     
