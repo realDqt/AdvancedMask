@@ -21,12 +21,16 @@ public class ExperimentManager3 : MonoBehaviour
     public Camera m_RawCamera;
     public Camera m_MaskCamera;
     public Camera m_BackgroundCamera;
+
+    public int m_BackgroundWidth = 512;
+    public int m_BackgroundHeight = 512;
     
     [FormerlySerializedAs("inputField")] public TMP_InputField m_InputField;
     
     private WhiteShadowPostProcess m_WhiteShadowPostProcess;
 
     private string m_RawRTSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\RawRT.png";
+    private string m_BackgroundRTSavePath = "D:\\DALAB\\Research\\Output\\BackgroundRT.png";
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length];
@@ -69,7 +73,7 @@ public class ExperimentManager3 : MonoBehaviour
         AlignAllCamerasWithGo(m_CurrentActiveModel);
         ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[2]);
         
-        
+        SetCameraRTWidthAndHeight(m_BackgroundCamera, m_BackgroundWidth, m_BackgroundHeight);
         
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
         Debug.Log("Starting"); 
@@ -208,6 +212,7 @@ public class ExperimentManager3 : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R))
         {
             //SaveCameraRTToDisk(m_RawCamera, m_RawRTSavePath);
+            SaveCameraRTToDisk(m_BackgroundCamera, m_BackgroundRTSavePath);
         }
     }
     
