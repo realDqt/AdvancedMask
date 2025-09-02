@@ -1197,7 +1197,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetQuarter: 0
-  backgroundImng: {fileID: 2800000, guid: ca7c83f0f7e7f7f40a3bd59865a24f86, type: 3}
+  backgroundImng: {fileID: 2800000, guid: d83f63abcf66a2a41902b648b3d97438, type: 3}
 --- !u!1 &1560406122
 GameObject:
   m_ObjectHideFlags: 0

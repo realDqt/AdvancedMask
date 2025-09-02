@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Unlit_BlueRobot 1
-  m_Shader: {fileID: 4800000, guid: 30a44892ca66b5e41b774ea5de395a12, type: 3}
+  m_Shader: {fileID: 4800000, guid: 240bf02c76253dd48a00766a8031995d, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4

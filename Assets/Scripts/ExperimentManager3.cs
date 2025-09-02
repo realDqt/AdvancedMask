@@ -73,7 +73,7 @@ public class ExperimentManager3 : MonoBehaviour
         AlignAllCamerasWithGo(m_CurrentActiveModel);
         ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[2]);
         
-        SetCameraRTWidthAndHeight(m_BackgroundCamera, m_BackgroundWidth, m_BackgroundHeight);
+        //SetCameraRTWidthAndHeight(m_BackgroundCamera, m_BackgroundWidth, m_BackgroundHeight);
         
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
         Debug.Log("Starting"); 

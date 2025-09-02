@@ -44,7 +44,7 @@ public class ExperimentManager2 : MonoBehaviour
     struct ModelSceneInfo
     {
         public string m_ModelName;
-        public int m_Intensity;
+        public int m_IntensityIdx;
         public bool m_Swap;
     }
 
@@ -56,7 +56,7 @@ public class ExperimentManager2 : MonoBehaviour
     public int  m_AppearCountPerModel = 2;   // How many times each model should appear
 
     [Header("Model Names (must match scene hierarchy)")]
-    private string[] m_ModelNames =  { "Sphere", "Teapot", "sofa_1", "SM_Veh_Mech_06", "Maple 1"};
+    private string[] m_ModelNames =  {"Teapot", "Bunny", "sofa_1", "SM_Veh_Mech_06", "Maple 1", "Spruce_Ball"};
 
     private GameObject[] m_Models;         // Found models
     private GameObject[] m_CurrentActiveModels = new GameObject[2]; // 当前场景中激活的两个模型
@@ -83,8 +83,10 @@ public class ExperimentManager2 : MonoBehaviour
 
     private WhiteShadowPostProcess m_WhiteShadowPostProcess;
 
-    private int m_CurIntensity = 1; // 当前亮度，取值1 2 3 4，代表四个不同亮度等级
+    private int m_CurIntensityIdx = 1; // 当前亮度，取值1 2 3 4，代表四个不同亮度等级
     private int m_IntensityCount = 4; // 总共的亮度种类， 暂时写死是4
+
+    public int[] m_Intensities = new int[] { 235, 200, 150, 110 };
     
     private int m_CurTimes = 1; // 当前实验进度
 
@@ -155,7 +157,7 @@ public class ExperimentManager2 : MonoBehaviour
                 {
                     ModelSceneInfo modelSceneInfo = new ModelSceneInfo();
                     modelSceneInfo.m_ModelName = m_ModelNames[j];
-                    modelSceneInfo.m_Intensity = k + 1;
+                    modelSceneInfo.m_IntensityIdx = k + 1;
                     modelSceneInfo.m_Swap = (i == 0);
                     res[idx++] = modelSceneInfo;
                 }
@@ -181,11 +183,11 @@ public class ExperimentManager2 : MonoBehaviour
         return res;
     }
 
-    private PreExperimentInfo GetPreExperimentInfo(int curTime, int curIntensity)
+    private PreExperimentInfo GetPreExperimentInfo(int curTime, int curIntensityIdx)
     {
         PreExperimentInfo experimentInfo = new PreExperimentInfo();
         experimentInfo.m_CurTimes = curTime;
-        experimentInfo.m_CurIntensity = curIntensity;
+        experimentInfo.m_CurIntensity = m_Intensities[curIntensityIdx - 1];
         return experimentInfo;
     }
     
@@ -205,11 +207,11 @@ public class ExperimentManager2 : MonoBehaviour
         Debug.Log("End to Log Pre Experiment Info for " + experimentInfo.m_CurTimes);
     }
 
-    private PostExperimentInfo GetPostExperimentInfo(float curAngle, int curIntensity, string curTimeStr, int curModelID)
+    private PostExperimentInfo GetPostExperimentInfo(float curAngle, int curIntensityIdx, string curTimeStr, int curModelID)
     {
         PostExperimentInfo experimentInfo = new PostExperimentInfo();
         experimentInfo.m_CurAngle = curAngle;
-        experimentInfo.m_CurIntensity = curIntensity;
+        experimentInfo.m_CurIntensity = m_Intensities[curIntensityIdx - 1];
         experimentInfo.m_CurTimeStr = curTimeStr;
         experimentInfo.m_ModelID = curModelID;
         return experimentInfo;
@@ -245,7 +247,7 @@ public class ExperimentManager2 : MonoBehaviour
     private void InitialPreExperiment()
     {
         m_Phase = ExperimentPhase.PreExperiment;
-        m_CurIntensity = 1;
+        m_CurIntensityIdx = 1;
         m_CurAngle = GetPhysicalDeviceAngle();
         
         m_PreExperimentModels[0] = GameObject.Find(m_PreExperimentModelName);
@@ -267,7 +269,7 @@ public class ExperimentManager2 : MonoBehaviour
         m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
 
         Debug.Log("Start Pre Experiment");
-        InfluenceSceneByIntensity(m_CurIntensity);
+        InfluenceSceneByIntensity(m_CurIntensityIdx);
     }
 
     Queue<ModelSceneInfo> ConvertArrayToQueue(ModelSceneInfo[] arr)
@@ -283,7 +285,7 @@ public class ExperimentManager2 : MonoBehaviour
     private void InitialFormalExperiment()
     {
         m_Phase = ExperimentPhase.FormalExperiment;
-        m_CurIntensity = 1;
+        m_CurIntensityIdx = 1;
         m_CurAngle = GetPhysicalDeviceAngle();
 
         m_ModelSceneInfoQueue = ConvertArrayToQueue(ConstructRandomModelSceneInfo());
@@ -324,8 +326,8 @@ public class ExperimentManager2 : MonoBehaviour
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
         }
 
-        LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurInfo.m_Intensity));
-        InfluenceSceneByIntensity(m_CurInfo.m_Intensity);
+        LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurInfo.m_IntensityIdx));
+        InfluenceSceneByIntensity(m_CurInfo.m_IntensityIdx);
         return true;
     }
     
@@ -422,10 +424,11 @@ public class ExperimentManager2 : MonoBehaviour
        SaveCameraRTToDisk(m_BackgroundCamera, m_BackgrondRTSavePath);
     }
 
-    private void InfluenceSceneByIntensity(int intensity)
+    private void InfluenceSceneByIntensity(int intensityIdx)
     {
-        // TODO: 使用参数intensity影响当前场景
-        Debug.Log("Influence the Scene by Intensity = " + intensity);
+        // 使用参数intensityIdx影响当前场景
+        Debug.Log("Influence the Scene by Intensity = " + m_Intensities[intensityIdx - 1]);
+        m_BackgroundCamera.GetComponent<BGProcess>().multiplier = m_Intensities[intensityIdx - 1] / 255.0f;
     }
 
     private string GetCurTime()
@@ -470,8 +473,8 @@ public class ExperimentManager2 : MonoBehaviour
         // ------------------------------改变亮度---------------------------------
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            ++m_CurIntensity;
-            if (m_CurIntensity > m_IntensityCount)
+            ++m_CurIntensityIdx;
+            if (m_CurIntensityIdx > m_IntensityCount)
             {
                 Debug.Log("Pre Experiment is ending");
                 m_PreExperimentModels[0].SetActive(false);
@@ -481,7 +484,7 @@ public class ExperimentManager2 : MonoBehaviour
                 
                 return;
             }
-            InfluenceSceneByIntensity(m_CurIntensity);
+            InfluenceSceneByIntensity(m_CurIntensityIdx);
         }
         
         // ------------------------------调整偏振片---------------------------------
@@ -494,7 +497,7 @@ public class ExperimentManager2 : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             // 记录
-            PostExperimentInfo experimentInfo = GetPostExperimentInfo(m_CurAngle, m_CurInfo.m_Intensity, GetCurTime(), GetModelID(m_CurrentActiveModels[0]) + 1);
+            PostExperimentInfo experimentInfo = GetPostExperimentInfo(m_CurAngle, m_CurInfo.m_IntensityIdx, GetCurTime(), GetModelID(m_CurrentActiveModels[0]) + 1);
             LogPostExperimentInfo(experimentInfo);
             m_PostExperimentInfos[m_CurTimes - 2] = experimentInfo;
             
