@@ -1795,6 +1795,8 @@ MonoBehaviour:
   m_BackgroundCamera: {fileID: 1542291978}
   m_BackgroundWidth: 1024
   m_BackgroundHeight: 1024
+  m_AppearCountPerModel: 3
+  m_Intensities: 6e00000096000000c8000000eb000000
   m_InputField: {fileID: 327848788}
 --- !u!4 &1891347242
 Transform:
