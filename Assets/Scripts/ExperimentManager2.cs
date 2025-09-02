@@ -203,6 +203,10 @@ public class ExperimentManager2 : MonoBehaviour
             Debug.LogError("Pre Experiment Model not found: " + m_PreExperimentModelName + " (1)");
         }
         m_PreExperimentModels[1].SetActive(true);
+        
+        m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
+        m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_PreExperimentModels);
+        m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
 
         Debug.Log("Start Pre Experiment");
         InfluenceSceneByIntensity(m_CurIntensity);
@@ -229,7 +233,7 @@ public class ExperimentManager2 : MonoBehaviour
         SwapTransformRandomly(m_CurrentActiveModels[0], m_CurrentActiveModels[1]);
         //SetCameraWidthAndHeight();
 
-        m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
+        
         //Debug.Log("Starting"); 
         if (m_WhiteShadowPostProcess == null)
         {
