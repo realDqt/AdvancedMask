@@ -833,7 +833,7 @@ Transform:
   - {fileID: 337044075}
   - {fileID: 1019117593}
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1091649719
 GameObject:
@@ -1196,7 +1196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ce2d8ef72963b549bebfa916be41318, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetQuarter: 2
+  targetQuarter: 0
   backgroundImng: {fileID: 2800000, guid: ca7c83f0f7e7f7f40a3bd59865a24f86, type: 3}
 --- !u!1 &1560406122
 GameObject:
@@ -1229,7 +1229,7 @@ Transform:
   - {fileID: 4515836251304379041}
   - {fileID: 1643950751}
   m_Father: {fileID: 0}
-  m_RootOrder: 10
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1643950747
 GameObject:
@@ -1793,6 +1793,8 @@ MonoBehaviour:
   m_RawCamera: {fileID: 1938152537}
   m_MaskCamera: {fileID: 1865753833}
   m_BackgroundCamera: {fileID: 1542291978}
+  m_BackgroundWidth: 1024
+  m_BackgroundHeight: 1024
   m_InputField: {fileID: 327848788}
 --- !u!4 &1891347242
 Transform:
