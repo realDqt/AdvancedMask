@@ -19,9 +19,9 @@ public class AntiDistortion : PostEffectsBase
             material.SetFloat("_Screen_Width", screenWidth);
             material.SetFloat("_Screen_Height", screenHeight);
             */
-            Debug.Log("Test: K_R = " + m_KR);
-            Debug.Log("Test: K_G = " + m_KG);
-            Debug.Log("Test: K_B = " + m_KB);
+            //Debug.Log("Test: K_R = " + m_KR);
+            //Debug.Log("Test: K_G = " + m_KG);
+            //Debug.Log("Test: K_B = " + m_KB);
             material.SetVector("_K_R", m_KR);   
             material.SetVector("_K_G", m_KG);
             material.SetVector("_K_B", m_KB);

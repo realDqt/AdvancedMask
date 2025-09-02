@@ -59,6 +59,9 @@ public class MotorControlAndDataLogger : MonoBehaviour
 
     private int curUserId = 0;
     private float[] finalDegrees;
+
+    // 黑色遮罩UI（请在场景中创建Canvas+Image并命名BlackMask）
+    public GameObject blackMask;
     
     
 
@@ -318,13 +321,31 @@ public class MotorControlAndDataLogger : MonoBehaviour
         }else if (Input.GetKey(KeyCode.DownArrow))
         {
             CounterClockwise(fineSpeedPercent, fineAdjustmentDegree);
-        }else if (Input.GetKey(KeyCode.Space))
+        }
+        else if (Input.GetKey(KeyCode.Space))
         {
-            Debug.Log("Final degree selected by user is " + finalDegrees[curUserId++]);
-        }else if (Input.GetKey(KeyCode.S))
+            // 显示黑色遮罩
+            if (blackMask != null) blackMask.SetActive(true);
+            Debug.Log("Final degree selected by user is " + finalDegrees[curUserId]);
+            StartCoroutine(HomeAndUnmaskCoroutine());
+            curUserId++;
+        }
+        else if (Input.GetKey(KeyCode.S))
         {
             SaveFinalDegreesToDisk(finalDegreeSavePath);
         }
+    // 协程：电机归位并等待完成后隐藏遮罩
+    private System.Collections.IEnumerator HomeAndUnmaskCoroutine()
+    {
+        if (_dev != null)
+        {
+            _dev.Home(Thorlabs.Elliptec.ELLO_DLL.ELLBaseDevice.DeviceDirection.Clockwise);
+            // 等待电机归位完成（假设有IsHoming或类似标志，否则可用延时）
+            float waitTime = 2.0f; // 可根据实际归位时间调整
+            yield return new WaitForSeconds(waitTime);
+        }
+        if (blackMask != null) blackMask.SetActive(false);
+    }
     }
 
     private void SetVelocityPercent(int speedPercent)
