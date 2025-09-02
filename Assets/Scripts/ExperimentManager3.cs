@@ -190,7 +190,7 @@ public class ExperimentManager3 : MonoBehaviour
             m_CurrentActiveModel = m_ShowQueue.Dequeue();
             m_CurrentActiveModel.SetActive(true);
             
-            ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[2]);
+            ReplaceMainTexture(m_CurrentActiveModel.transform.GetChild(0).gameObject, Text4UserStudy[0]);
             
             m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_CurrentActiveModel.transform.GetChild(0).gameObject);
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_CurrentActiveModel.transform.GetChild(1).gameObject);
@@ -272,8 +272,8 @@ public class ExperimentManager3 : MonoBehaviour
         }
 
         // 三台显示器?
-        m_RawCamera.targetDisplay = 0;
-        m_MaskCamera.targetDisplay = 1;
-        m_BackgroundCamera.targetDisplay = 2;
+        // m_RawCamera.targetDisplay = 0;
+        // m_MaskCamera.targetDisplay = 1;
+        // m_BackgroundCamera.targetDisplay = 2;
     }
 }

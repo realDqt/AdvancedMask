@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Threading;
 using System.Globalization;
@@ -55,10 +56,13 @@ public class MotorControlAndDataLogger : MonoBehaviour
     
     public int maxUserCount = 100;
 
-    public string finalDegreeSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\test.csv";
+    public string finalDegreeSavePath = "E:\\UnityProjects\\9.2\\AdvancedMask\\Output\\test.csv";
 
     private int curUserId = 0;
     private float[] finalDegrees;
+
+    // 黑色遮罩UI（请在场景中创建Canvas+Image并命名BlackMask）
+    public GameObject blackMask;
     
     
 
@@ -213,8 +217,8 @@ public class MotorControlAndDataLogger : MonoBehaviour
     private void InitializeDataLoggers()
     {
         string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string continuousLogPath = Path.Combine(Application.persistentDataPath, $"ContinuousLog_{timestamp}.csv");
-        string manualLogPath = Path.Combine(Application.persistentDataPath, $"ManualLog_{timestamp}.csv");
+        string continuousLogPath = $@"E:\UnityProjects\9.2\AdvancedMask\Output\ContinuousLog_{timestamp}.csv";
+        string manualLogPath = $@"E:\UnityProjects\9.2\AdvancedMask\Output\ManualLog_{timestamp}.csv";
 
         string header = "Timestamp,CalculatedTargetAngle,ActualMotorAngle,PupilRadius,EstimatedLuminance(cd/m^2)";
 
@@ -318,13 +322,34 @@ public class MotorControlAndDataLogger : MonoBehaviour
         }else if (Input.GetKey(KeyCode.DownArrow))
         {
             CounterClockwise(fineSpeedPercent, fineAdjustmentDegree);
-        }else if (Input.GetKey(KeyCode.Space))
+        }
+        else if (Input.GetKey(KeyCode.Space))
         {
-            Debug.Log("Final degree selected by user is " + finalDegrees[curUserId++]);
-        }else if (Input.GetKey(KeyCode.S))
+            // 显示黑色遮罩
+            if (blackMask != null) blackMask.SetActive(true);
+            Debug.Log("Final degree selected by user is " + finalDegrees[curUserId]);
+            StartCoroutine(HomeAndUnmaskCoroutine());
+            curUserId++;
+        }
+        else if (Input.GetKey(KeyCode.S))
         {
             SaveFinalDegreesToDisk(finalDegreeSavePath);
         }
+    // 协程：电机归位并等待完成后隐藏遮罩
+    IEnumerator HomeAndUnmaskCoroutine()
+    {
+        if (_dev != null)
+        {
+            //_dev.Home(Thorlabs.Elliptec.ELLO_DLL.ELLBaseDevice.DeviceDirection.Clockwise);
+            decimal initialAngle = (decimal)initialAngleOffset;
+            _dev.MoveAbsolute(initialAngle);
+            _lastCalculatedTargetAngle = initialAngle;
+                // 等待电机归位完成（假设有IsHoming或类似标志，否则可用延时）
+            float waitTime = 2.0f; // 可根据实际归位时间调整
+            yield return new WaitForSeconds(waitTime);
+        }
+        if (blackMask != null) blackMask.SetActive(false);
+    }
     }
 
     private void SetVelocityPercent(int speedPercent)
@@ -348,6 +373,7 @@ public class MotorControlAndDataLogger : MonoBehaviour
         _dev.SetJogstepSize((decimal)degree);
         _dev.JogForward();
         finalDegrees[curUserId] += degree;
+        Debug.Log("Current Angle = " + _dev.Position);
     }
     
     private void CounterClockwise(int speedPercent, float degree)
