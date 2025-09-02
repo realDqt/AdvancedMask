@@ -41,7 +41,7 @@ Shader "Hidden/WhiteShadowReceiver"
                 // 采样阴影
                 half shadow = UNITY_SAMPLE_SHADOW(_ShadowMapTexture, shadowCoord.xyz);
                 // 有阴影就画白，否则丢弃
-                if (shadow < 0.1)       // 有阴影 -> 画白
+                if (shadow < 0.001)       // 有阴影 -> 画白
                     return fixed4(1, 0, 0, 0);
                 else
                     return fixed4(0, 0, 0, 0);// 无阴影 -> 不画
