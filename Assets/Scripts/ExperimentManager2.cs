@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using System.Runtime.CompilerServices;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
@@ -81,7 +82,7 @@ public class ExperimentManager2 : MonoBehaviour
     public float m_CoarseAngleStep = 10.0f; // 粗调时，每次偏振片变化角度
     private float m_CurAngle = 0.0f;        // 当前偏振片夹角
 
-    private string m_SavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\ExperimentRes.csv";
+    private string m_SavePath = "D:\\DALAB\\Research\\Output\\ExperimentRes.csv";
     
     
     private PostExperimentInfo[] m_PostExperimentInfos;
@@ -127,7 +128,7 @@ public class ExperimentManager2 : MonoBehaviour
     private void LogPreExperimentInfo(PreExperimentInfo experimentInfo)
     {
         // 开始打印
-        Debug.Log("Log Pre Experiment Info for " + experimentInfo.m_CurTimes + " Begin:");
+        Debug.Log("Begin to Log Pre Experiment Info for " + experimentInfo.m_CurTimes);
         
         // 当前实验进度
         int totalTimes = m_ModelNames.Length * m_IntensityCount * m_AppearCountPerModel;;
@@ -137,7 +138,7 @@ public class ExperimentManager2 : MonoBehaviour
         Debug.Log("Current Intensity: " + experimentInfo.m_CurIntensity);
         
         // 结束打印
-        Debug.Log("Log Pre Experiment Info for " + experimentInfo.m_CurTimes + " End");
+        Debug.Log("End to Log Pre Experiment Info for " + experimentInfo.m_CurTimes);
     }
 
     private PostExperimentInfo GetPostExperimentInfo(float curAngle, int curIntensity, string curTimeStr, int curModelID)
@@ -153,7 +154,7 @@ public class ExperimentManager2 : MonoBehaviour
     private void LogPostExperimentInfo(PostExperimentInfo experimentInfo)
     {
         // 开始打印
-        Debug.Log("Log Post Experiment Info for " + (m_CurTimes - 1) + " Begin: ");
+        Debug.Log("Begin to Log Post Experiment Info for " + (m_CurTimes - 1));
         
         // 用户最终选择的夹角
         Debug.Log("Final Angle: " + experimentInfo.m_CurAngle);
@@ -163,7 +164,7 @@ public class ExperimentManager2 : MonoBehaviour
         
         
         // 结束打印
-        Debug.Log("Log Post Experiment Info for " + (m_CurTimes - 1) + " End");
+        Debug.Log("End to Log Post Experiment Info for " + (m_CurTimes - 1));
     }
     
 
@@ -218,7 +219,8 @@ public class ExperimentManager2 : MonoBehaviour
         m_PostExperimentInfos = new PostExperimentInfo[totalTimes];
         Debug.Log("Start Formal Experiment, Total Times = " +  totalTimes);
         
-        BuildCertainQueue();
+        //BuildCertainQueue();
+        BuildRandomQueue();
         
         m_CurrentActiveModels = GetTwoModelsFromShowQueue(ref m_ShowQueue);
         
@@ -439,7 +441,7 @@ public class ExperimentManager2 : MonoBehaviour
     
     private void HandleFormalExperiment()
     {
-           // ------------------------------切换物体或亮度---------------------------------
+        // ------------------------------切换物体或亮度---------------------------------
         if (Input.GetKeyDown(KeyCode.Space))
         {
             // 按下空格表示用户已经调整偏振片角度到合适的值， 记录当前角度，并进行下一个模型or亮度
@@ -447,10 +449,10 @@ public class ExperimentManager2 : MonoBehaviour
             
             // 记录偏振片角度
             
-            PostExperimentInfo experimentInfo = GetPostExperimentInfo(m_CurAngle, m_CurIntensity, GetCurTime(), m_CurModelId + 1);
+            PostExperimentInfo experimentInfo = GetPostExperimentInfo(m_CurAngle, m_CurIntensity, GetCurTime(), GetModelID(m_CurrentActiveModels[0]) + 1);
             LogPostExperimentInfo(experimentInfo);
             m_PostExperimentInfos[m_CurTimes - 2] = experimentInfo;
-            Debug.Log("Debug!!! cur record idx = " + (m_CurTimes - 2));
+            //Debug.Log("Debug!!! cur record idx = " + (m_CurTimes - 2));
             
             //SetPhysicalDeviceAngle(m_CurAngle);
             m_CurAngle = GetPhysicalDeviceAngle();
@@ -566,43 +568,79 @@ public class ExperimentManager2 : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Builds a queue of models ensuring each appears exactly m_AppearCountPerModel times
-    /// and that no two consecutive models are identical.
-    /// </summary>
+    private int GetModelID(GameObject go)
+    {
+        for (int i = 0; i < m_ModelNames.Length; ++i)
+        {
+            if (go.name == m_ModelNames[i])
+            {
+                return i;
+            }
+        }
+        Debug.LogError("Not found " + go.name);
+        return -1;
+    }
+
     private void BuildRandomQueue()
     {
-        // 1. Populate the master list: each valid model is added m_AppearCountPerModel times.
-        List<GameObject> masterList = new List<GameObject>();
-        foreach (var go in m_Models)
-        {
-            if (go == null) continue;
-            for (int i = 0; i < m_AppearCountPerModel; i++)
-                masterList.Add(go);
-        }
-
-        // 2. Randomly extract models while preventing adjacent duplicates.
         m_ShowQueue = new Queue<GameObject>();
-        GameObject lastSelected = null;
-
-        while (masterList.Count > 0)
+        for (int i = 0; i < m_AppearCountPerModel; ++i)
         {
-            // Gather indices of models that differ from the last selected one.
-            List<int> validIndices = new List<int>();
-            for (int i = 0; i < masterList.Count; i++)
-                if (masterList[i] != lastSelected || masterList.Count == 1) // Accept forced pick if only one remains.
-                    validIndices.Add(i);
-
-            // Choose a random valid index.
-            int chosenIndex = validIndices[Random.Range(0, validIndices.Count)];
-            GameObject chosenModel = masterList[chosenIndex];
-
-            m_ShowQueue.Enqueue(chosenModel);
-            lastSelected = chosenModel;
-
-            // Remove the chosen instance from the master list.
-            masterList.RemoveAt(chosenIndex);
+            // 前置条件：m_Models数组已构造完毕
+            List<GameObject> li = BuildRandomList(m_Models);
+            if (li == null)
+            {
+                Debug.LogError("li is null");
+            }
+            else
+            {
+                //Debug.Log("li.Count =  " + li.Count);
+                foreach (var go in li) m_ShowQueue.Enqueue(go);
+            }
+            
         }
+    }
+
+    private List<GameObject> BuildRandomList(GameObject[] gameObjects)
+    {
+        List<GameObject> result = new List<GameObject>();
+
+        if (gameObjects == null || gameObjects.Length == 0)
+        {
+            Debug.LogError("Empty list");
+            return result;
+        }
+            
+
+        // 计算有多少对
+        int pairCount = (gameObjects.Length + 1) / 2;
+        //Debug.Log("pairCount = " + pairCount);
+
+        // 先生成 0..pairCount-1 的下标，然后打乱
+        int[] indices = new int[pairCount];
+        for (int i = 0; i < pairCount; i++)
+            indices[i] = i;
+
+        // Fisher-Yates 洗牌
+        System.Random rng = new System.Random();
+        for (int i = pairCount - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (indices[i], indices[j]) = (indices[j], indices[i]);
+        }
+
+        // 根据打乱后的下标顺序把每一对加入结果
+        foreach (int idx in indices)
+        {
+            int first = idx * 2;
+            int second = first + 1;
+
+            result.Add(gameObjects[first]);
+            if (second < gameObjects.Length)            // 防止奇数个元素时越界
+                result.Add(gameObjects[second]);
+        }
+
+        return result;
     }
 
     private void AssignCameraToDisplay()
