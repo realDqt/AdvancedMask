@@ -146,7 +146,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
         }
         else
         {
-            //Debug.Log("Construct mask for " + go.name);
+            Debug.Log("Construct object mask for " + go.name);
         }
         
         List<Renderer> renders = new List<Renderer>(go.GetComponentsInChildren<Renderer>());
@@ -162,7 +162,7 @@ public class WhiteShadowPostProcess : MonoBehaviour
         }
         else
         {
-            //Debug.Log("Construct mask for " + go.name);
+            Debug.Log("Construct shadow mask for " + go.name);
         }
         
         List<Renderer> renders = new List<Renderer>(go.GetComponentsInChildren<Renderer>());

@@ -289,7 +289,7 @@ public class ExperimentManager3 : MonoBehaviour
         
         //SetCameraRTWidthAndHeight(m_BackgroundCamera, m_BackgroundWidth, m_BackgroundHeight);
         
-        m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
+        //m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
         Debug.Log("Starting"); 
         if (m_WhiteShadowPostProcess == null)
         {
@@ -401,6 +401,7 @@ public class ExperimentManager3 : MonoBehaviour
         m_CurIntensityIdx = 1;
         m_CurAngle = GetPhysicalDeviceAngle();
         
+        
         m_PreExperimentModel = GameObject.Find(m_PreExperimentModelName);
         if (m_PreExperimentModel == null)
         {
@@ -408,11 +409,20 @@ public class ExperimentManager3 : MonoBehaviour
         }
         m_PreExperimentModel.SetActive(true);
         
+        AlignAllCamerasWithGo(m_PreExperimentModel);
+        
         ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdxs[m_CurIntensityIdx - 1]));
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
-        m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_PreExperimentModel.transform.GetChild(0).gameObject);
-        m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_PreExperimentModel.transform.GetChild(1).gameObject);
+        if (m_WhiteShadowPostProcess == null)
+        {
+            Debug.LogError("White Shadow PostProcess not found");
+        }
+        else
+        {
+            m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_PreExperimentModel.transform.GetChild(0).gameObject);
+            m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_PreExperimentModel.transform.GetChild(1).gameObject);
+        }
 
         Debug.Log("Start Pre Experiment");
         InfluenceSceneByIntensity(m_CurIntensityIdx);
@@ -455,6 +465,16 @@ public class ExperimentManager3 : MonoBehaviour
                 return;
             }
             ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdxs[m_CurIntensityIdx - 1]));
+            if (m_WhiteShadowPostProcess == null)
+            {
+                Debug.LogError("White Shadow PostProcess not found");
+            }
+            else
+            {
+                Debug.Log("White Shadow PostProcess found");
+                m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_PreExperimentModel.transform.GetChild(0).gameObject);
+                m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_PreExperimentModel.transform.GetChild(1).gameObject);
+            }
             InfluenceSceneByIntensity(m_CurIntensityIdx);
         }
     }
