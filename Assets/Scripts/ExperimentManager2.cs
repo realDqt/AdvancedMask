@@ -32,13 +32,6 @@ public class ExperimentManager2 : MonoBehaviour
         public int m_IntensityIdx;
         public bool m_Swap;
     }
-    
-    struct ModelSceneInfo
-    {
-        public string m_ModelName;
-        public int m_IntensityIdx;
-        public bool m_Swap;
-    }
 
     private string m_PreExperimentModelName = "Capsule";
     private GameObject[] m_PreExperimentModels = new GameObject[2];
@@ -279,6 +272,7 @@ public class ExperimentManager2 : MonoBehaviour
         // 使用参数intensityIdx影响当前场景
         Debug.Log("Influence the Scene by Intensity = " + m_Intensities[intensityIdx - 1]);
         m_BackgroundCamera.GetComponent<BGProcess>().multiplier = m_Intensities[intensityIdx - 1] / 255.0f;
+        m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = Random.Range(0, 4);
     }
     
     private void Update()

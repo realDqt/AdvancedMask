@@ -8,6 +8,8 @@ public class BGProcess : MonoBehaviour
     public float multiplier = 1f;
     public Texture2D backgroundImg;
 
+    public int quadrantIndex = 0;
+
     private Material mat;
 
     void OnEnable()
@@ -41,6 +43,7 @@ public class BGProcess : MonoBehaviour
         mat.SetVector("_Offset", new Vector2(offsetX, offsetY));
         mat.SetFloat("_Multiplier", multiplier);
         mat.SetTexture("_BackgroundTex", backgroundImg);
+        mat.SetInt("_QuadrantIndex", quadrantIndex);
 
         Graphics.Blit(src, dest, mat);
     }

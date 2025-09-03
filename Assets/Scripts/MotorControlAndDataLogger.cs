@@ -48,6 +48,8 @@ public class MotorControlAndDataLogger : MonoBehaviour
     private volatile bool _isPupilThreadRunning = false;
     private volatile float _currentPupilRadius = 0.0f;
 
+    private decimal _lastCalculatedTargetAngle;
+
     #region Unity Lifecycle Methods
     void Start()
     {
@@ -211,7 +213,7 @@ public class MotorControlAndDataLogger : MonoBehaviour
             decimal initialAngle = (decimal)initialAngleOffset;
             _dev.MoveAbsolute(initialAngle);
             _lastCalculatedTargetAngle = initialAngle;
-                // 等待电机归位完成（假设有IsHoming或类似标志，否则可用延时）
+            // 等待电机归位完成（假设有IsHoming或类似标志，否则可用延时）
             float waitTime = 2.0f; // 可根据实际归位时间调整
             yield return new WaitForSeconds(waitTime);
         }

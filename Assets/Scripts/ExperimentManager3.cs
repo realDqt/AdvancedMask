@@ -76,15 +76,6 @@ public class ExperimentManager3 : MonoBehaviour
 
     public int[] m_Intensities = new int[] { 110, 150, 200, 235};
     
-    public int  m_AppearCountPerModel = 2;
-    
-    private int m_CurIntensityIdx = 1; // 当前亮度，取值1 2 3 4，代表四个不同亮度等级
-    private int m_IntensityCount = 4; // 总共的亮度种类， 暂时写死是4
-    
-    private Queue<ModelSceneInfo> m_ModelSceneInfoQueue;
-
-    public int[] m_Intensities = new int[] { 110, 150, 200, 235};
-    
     [FormerlySerializedAs("inputField")] public TMP_InputField m_InputField;
     
     private WhiteShadowPostProcess m_WhiteShadowPostProcess;
@@ -306,6 +297,7 @@ public class ExperimentManager3 : MonoBehaviour
         // 使用参数intensityIdx影响当前场景
         Debug.Log("Influence the Scene by Intensity = " + m_Intensities[intensityIdx - 1]);
         m_BackgroundCamera.GetComponent<BGProcess>().multiplier = m_Intensities[intensityIdx - 1] / 255.0f;
+        m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = Random.Range(0, 4);
     }
 
     private void AlignAllCamerasWithGo(GameObject go)
@@ -402,8 +394,6 @@ public class ExperimentManager3 : MonoBehaviour
             m_CurrentActiveModel.SetActive(false);
             ChangeToNext();
         }
-        Debug.LogError("Not found " + go.name);
-        return -1;
     }
     
     private string GetCurTime()
