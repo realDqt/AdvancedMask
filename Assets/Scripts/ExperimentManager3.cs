@@ -39,6 +39,7 @@ public class ExperimentManager3 : MonoBehaviour
         public int m_ModelID;
         public int m_TextSize;
         public int m_TextIdx; // 从1开始
+        public int m_Answer;
     }
 
     struct ModelSceneInfo
@@ -222,6 +223,7 @@ public class ExperimentManager3 : MonoBehaviour
         experimentInfo.m_ModelID = curModelID;
         experimentInfo.m_TextSize = curTextSize;
         experimentInfo.m_TextIdx = curTextIdx;
+        experimentInfo.m_Answer = m_Idx2Digit[curTextIdx - 1];
         return experimentInfo;
     }
 
@@ -496,12 +498,12 @@ public class ExperimentManager3 : MonoBehaviour
         using (StreamWriter sw = new StreamWriter(filePath, false)) // false = 覆盖写入
         {
             // 写表头
-            sw.WriteLine("ExperimentID,Angle,Intensity,ModelID,Time,TextSize,TextIdx"); // TODO: Angle在此记录?
+            sw.WriteLine("ExperimentID,Angle,Intensity,ModelID,Time,TextSize,TextIdx,Answer"); // TODO: Angle在此记录?
 
             // 写数据
             for (int i = 0; i < data.Length; i++)
             {
-                sw.WriteLine($"{i + 1},{data[i].m_CurAngle},{data[i].m_CurIntensity},{data[i].m_ModelID},{data[i].m_CurTimeStr},{data[i].m_TextSize},{data[i].m_TextIdx}");
+                sw.WriteLine($"{i + 1},{data[i].m_CurAngle},{data[i].m_CurIntensity},{data[i].m_ModelID},{data[i].m_CurTimeStr},{data[i].m_TextSize},{data[i].m_TextIdx},{data[i].m_Answer}");
             }
         }
 
