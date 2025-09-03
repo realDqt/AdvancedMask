@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Threading;
 using System.Globalization;
@@ -20,51 +21,21 @@ public class MotorControlAndDataLogger : MonoBehaviour
     public char minAddress = '0';
     public char maxAddress = '1';
     [Tooltip("Initial angle offset for motor position")]
-    public float initialAngleOffset = 102f;
+    public float initialAngleOffset = 0f;
 
     [Header("Pupil Core Settings")]
     public string pupilRemoteAddress = "127.0.0.1";
     public string pupilReqPort = "50020";
-
-    [Header("Data Logging")]
-    [Tooltip("Number of logs per second")]
-    public float logsPerSecond = 3f;
-
-    [Header("Pupil-Controlled Motor")]
-    [Tooltip("Minimum angle change required to move motor")]
-    public float minimumAngleChangeToMove = 0.5f;
-    [Tooltip("Interval (seconds) to check pupil data and update motor")]
-    public float pupilCheckInterval = 2f;
-
-    [Tooltip("Minimum log luminance (log10 cd/m^2), e.g. -3 for 0.001 cd/m^2")]
-    public float minLogLuminance = -3f;
-    [Tooltip("Maximum log luminance (log10 cd/m^2), e.g. 4 for 10,000 cd/m^2")]
-    public float maxLogLuminance = 4f;
-
-    [Tooltip("Motor angle for low luminance")]
-    public float motorAngleForLowLuminance = 90f;
-    [Tooltip("Motor angle for high luminance")]
-    public float motorAngleForHighLuminance = 0f;
-
     
-    public float coarseAdjustmentDegree = 10.0f;
-    public float fineAdjustmentDegree = 5.0f;
+    public float coarseAdjustmentDegree = 5.0f;
+    public float fineAdjustmentDegree = 1.0f;
 
-    public int coarseSpeedPercent = 60;
-    public int fineSpeedPercent = 30;
+    public int coarseSpeedPercent = 100;
+    public int fineSpeedPercent = 100;
     
-    public int maxUserCount = 100;
-
-    public string finalDegreeSavePath = "D:\\DALAB\\Research\\AdvancedMask\\Output\\test.csv";
-
-    private int curUserId = 0;
-    private float[] finalDegrees;
-
     // 黑色遮罩UI（请在场景中创建Canvas+Image并命名BlackMask）
     public GameObject blackMask;
     
-    
-
     // Motor control
     private ELLDevices _mgr;
     private ELLDevice _dev;
@@ -75,21 +46,9 @@ public class MotorControlAndDataLogger : MonoBehaviour
     private SubscriberSocket _pupilSubSocket;
     private Thread _pupilSubThread;
     private volatile bool _isPupilThreadRunning = false;
-    private volatile float _currentPupilRadius = 0.0f; // in mm
-
-    // Data logging
-    private StreamWriter _continuousDataWriter;
-    private StreamWriter _manualDataWriter;
-    private float _logInterval;
-    private float _timeSinceLastLog = 0f;
-    private decimal _lastCalculatedTargetAngle = 0m;
-    private float _lastEstimatedLuminance = 0f;
-
-    // Pupil control
-    private float _timeSinceLastPupilCheck = 0f;
+    private volatile float _currentPupilRadius = 0.0f;
 
     #region Unity Lifecycle Methods
-
     void Start()
     {
         if (!InitializeMotor())
@@ -97,24 +56,26 @@ public class MotorControlAndDataLogger : MonoBehaviour
             Debug.LogError("ELL14: connect failed, abort auto run.");
         }
         InitializePupilSubscriber();
-        InitializeDataLoggers();
-        if (logsPerSecond > 0)
-        {
-            _logInterval = 1f / logsPerSecond;
-        }
-        
-        finalDegrees = new float[maxUserCount];
-        for (int i = 0; i < maxUserCount; i++)
-            finalDegrees[i] = initialAngleOffset;
+        // 日志逻辑改为Log类管理
     }
 
     void Update()
     {
         // Manual motor control is disabled; only pupil-driven control is active
         HandleMotorInput(); 
-        HandleContinuousLogging();
-        HandleManualLogging();
-        //HandlePupilMotorControl();
+        // 日志逻辑改为Log类管理
+        Log.Instance.UpdateAngle(_motorConnected ? (float)_dev.Position : 0f);
+        Log.Instance.UpdatePupilSize(_currentPupilRadius);
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Log.Instance.LogManualEvent();
+            // 显示黑色遮罩
+            if (blackMask != null) blackMask.SetActive(true);
+            decimal initialAngle = (decimal)initialAngleOffset;
+            _dev.MoveAbsolute(initialAngle);
+            Debug.Log($"[Motor] Moved to initial angle: {initialAngleOffset} degrees.");
+        }
     }
 
     void OnDestroy() => Cleanup();
@@ -143,10 +104,10 @@ public class MotorControlAndDataLogger : MonoBehaviour
                 if (d == null) continue;
 
                 _dev = d;
-
+                //_dev.Home(ELLBaseDevice.DeviceDirection.Clockwise);
+                //Thread.Sleep(600);
                 decimal initialAngle = (decimal)initialAngleOffset;
                 _dev.MoveAbsolute(initialAngle);
-                _lastCalculatedTargetAngle = initialAngle;
                 Debug.Log($"[Motor] Moved to initial angle: {initialAngleOffset} degrees.");
                 Thread.Sleep(600);
 
@@ -169,22 +130,6 @@ public class MotorControlAndDataLogger : MonoBehaviour
             _dev = null;
             _mgr = null;
             return false;
-        }
-    }
-
-    private void SaveFinalDegreesToDisk(string filepath)
-    {
-        if (finalDegrees == null || finalDegrees.Length == 0) return;
-
-        using (var writer = new StreamWriter(filepath, false, System.Text.Encoding.UTF8))
-        {
-            // table's title
-            writer.WriteLine("UserID,Degree");
-
-            for (int i = 0; i < finalDegrees.Length; i++)
-            {
-                writer.WriteLine($"{i},{finalDegrees[i].ToString(CultureInfo.InvariantCulture)}");
-            }
         }
     }
 
@@ -213,32 +158,6 @@ public class MotorControlAndDataLogger : MonoBehaviour
         }
     }
 
-    private void InitializeDataLoggers()
-    {
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string continuousLogPath = Path.Combine(Application.persistentDataPath, $"ContinuousLog_{timestamp}.csv");
-        string manualLogPath = Path.Combine(Application.persistentDataPath, $"ManualLog_{timestamp}.csv");
-
-        string header = "Timestamp,CalculatedTargetAngle,ActualMotorAngle,PupilRadius,EstimatedLuminance(cd/m^2)";
-
-        try
-        {
-            _continuousDataWriter = new StreamWriter(continuousLogPath, true);
-            _continuousDataWriter.WriteLine(header);
-            _continuousDataWriter.Flush();
-            Debug.Log($"[Logger] Continuous data will be saved to: {continuousLogPath}");
-
-            _manualDataWriter = new StreamWriter(manualLogPath, true);
-            _manualDataWriter.WriteLine(header);
-            _manualDataWriter.Flush();
-            Debug.Log($"[Logger] Manual events will be saved to: {manualLogPath}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[Logger] Failed to create log files: {e.Message}");
-        }
-    }
-
     private void Cleanup()
     {
         if (_isPupilThreadRunning)
@@ -258,51 +177,12 @@ public class MotorControlAndDataLogger : MonoBehaviour
             _mgr = null;
             Debug.Log("ELL14: disconnected.");
         }
-        _continuousDataWriter?.Close();
-        _manualDataWriter?.Close();
-        Debug.Log("[Logger] Log files closed.");
+
     }
 
     #endregion
 
     #region Core Logic & Mapping Methods
-
-    // Main pupil-driven motor control logic
-    private void HandlePupilMotorControl()
-    {
-        if (!EnsureDevice()) return;
-
-        _timeSinceLastPupilCheck += Time.deltaTime;
-
-        if (_timeSinceLastPupilCheck >= pupilCheckInterval)
-        {
-            _timeSinceLastPupilCheck -= pupilCheckInterval;
-
-            // 1. Estimate luminance from pupil radius
-            float estimatedLuminance = CalculateLuminanceFromPupilRadius(_currentPupilRadius);
-            _lastEstimatedLuminance = estimatedLuminance;
-
-            // 2. Map luminance to target motor angle
-            float targetAngle = CalculateAngleFromLuminance(estimatedLuminance);
-
-            decimal finalTargetAngle = (decimal)(targetAngle + initialAngleOffset);
-            _lastCalculatedTargetAngle = finalTargetAngle;
-
-            // 3. Move motor only if angle change exceeds threshold
-            decimal currentPosition = _dev.Position;
-            decimal angleDifference = Math.Abs(finalTargetAngle - currentPosition);
-
-            if (angleDifference >= (decimal)minimumAngleChangeToMove)
-            {
-                _dev.MoveAbsolute(finalTargetAngle);
-                Debug.Log($"[Pupil Control] Move triggered. Luminance: {estimatedLuminance:F4} cd/m^2 -> Target: {Math.Round(finalTargetAngle, 2)} deg");
-            }
-            else
-            {
-                Debug.Log($"[Pupil Control] Move skipped. Change {Math.Round(angleDifference, 2)} deg is below threshold.");
-            }
-        }
-    }
 
     private void HandleMotorInput()
     {
@@ -322,31 +202,8 @@ public class MotorControlAndDataLogger : MonoBehaviour
         {
             CounterClockwise(fineSpeedPercent, fineAdjustmentDegree);
         }
-        else if (Input.GetKey(KeyCode.Space))
-        {
-            // 显示黑色遮罩
-            if (blackMask != null) blackMask.SetActive(true);
-            Debug.Log("Final degree selected by user is " + finalDegrees[curUserId]);
-            StartCoroutine(HomeAndUnmaskCoroutine());
-            curUserId++;
-        }
-        else if (Input.GetKey(KeyCode.S))
-        {
-            SaveFinalDegreesToDisk(finalDegreeSavePath);
-        }
-    // 协程：电机归位并等待完成后隐藏遮罩
-    private System.Collections.IEnumerator HomeAndUnmaskCoroutine()
-    {
-        if (_dev != null)
-        {
-            _dev.Home(Thorlabs.Elliptec.ELLO_DLL.ELLBaseDevice.DeviceDirection.Clockwise);
-            // 等待电机归位完成（假设有IsHoming或类似标志，否则可用延时）
-            float waitTime = 2.0f; // 可根据实际归位时间调整
-            yield return new WaitForSeconds(waitTime);
-        }
-        if (blackMask != null) blackMask.SetActive(false);
     }
-    }
+    
 
     private void SetVelocityPercent(int speedPercent)
     {
@@ -359,62 +216,20 @@ public class MotorControlAndDataLogger : MonoBehaviour
     private void Clockwise(int speedPercent, float degree)
     {
         if(!EnsureDevice()) return;
-        if (curUserId >= maxUserCount) return;
-        if(degree < minimumAngleChangeToMove){
-            Debug.LogWarning("degree is too small to move!");
-            return;
-        }
 
         SetVelocityPercent(speedPercent);
         _dev.SetJogstepSize((decimal)degree);
         _dev.JogForward();
-        finalDegrees[curUserId] += degree;
+        Debug.Log("Current Angle = " + _dev.Position);
     }
     
     private void CounterClockwise(int speedPercent, float degree)
     {
         if(!EnsureDevice()) return;
-        if (curUserId >= maxUserCount) return;
-        if(degree < minimumAngleChangeToMove){
-            Debug.LogWarning("degree is too small to move!");
-            return;
-        }
 
         SetVelocityPercent(speedPercent);
         _dev.SetJogstepSize((decimal)degree);
         _dev.JogBackward();
-        finalDegrees[curUserId] -= degree;
-    }
-    
-    
-
-    // Estimate luminance (cd/m^2) from pupil radius (mm)
-    private float CalculateLuminanceFromPupilRadius(float radiusMm)
-    {
-        float diameterMm = radiusMm * 2f;
-
-        // Empirical formula: L = 10^((a - d) / b)
-        const float a = 5.428f;
-        const float b = 0.857f;
-
-        float logLuminance = (a - diameterMm) / b;
-
-        return Mathf.Pow(10f, logLuminance);
-    }
-
-    // Map luminance to motor angle
-    private float CalculateAngleFromLuminance(float luminance)
-    {
-        if (luminance <= 0) luminance = 0.00001f;
-
-        float logLuminance = Mathf.Log10(luminance);
-
-        float clampedLogLuminance = Mathf.Clamp(logLuminance, minLogLuminance, maxLogLuminance);
-
-        float normalizedValue = (clampedLogLuminance - minLogLuminance) / (maxLogLuminance - minLogLuminance);
-
-        // Interpolate between low and high luminance motor angles
-        return Mathf.Lerp(motorAngleForLowLuminance, motorAngleForHighLuminance, normalizedValue);
     }
 
     private bool EnsureDevice()
@@ -429,40 +244,7 @@ public class MotorControlAndDataLogger : MonoBehaviour
 
     #endregion
 
-    #region Logging and Subscriber Thread
-
-    private void HandleContinuousLogging()
-    {
-        if (_continuousDataWriter == null || logsPerSecond <= 0) return;
-        _timeSinceLastLog += Time.deltaTime;
-        if (_timeSinceLastLog >= _logInterval)
-        {
-            _timeSinceLastLog -= _logInterval;
-            LogCurrentData(_continuousDataWriter);
-        }
-    }
-
-    private void HandleManualLogging()
-    {
-        if (_manualDataWriter == null) return;
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            LogCurrentData(_manualDataWriter);
-            Debug.Log("[Logger] Manual event recorded.");
-        }
-    }
-
-    // Log current data to file
-    private void LogCurrentData(StreamWriter writer)
-    {
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        decimal currentActualAngle = _motorConnected ? _dev.Position : 0m;
-        float pupilRadius = _currentPupilRadius;
-
-        string logEntry = $"{timestamp},{_lastCalculatedTargetAngle},{currentActualAngle},{pupilRadius},{_lastEstimatedLuminance}";
-        writer.WriteLine(logEntry);
-        writer.Flush();
-    }
+    #region Subscriber Thread
 
     private void SubscriberLoop()
     {

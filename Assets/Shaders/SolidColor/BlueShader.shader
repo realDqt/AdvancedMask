@@ -40,7 +40,7 @@ Shader "Unlit/BlueShader"
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 col = fixed4(0.4748682,0.4477571,0.8113207,1);
-                col.rgb = pow(col.rgb, 2.2);          // Gamma 修正
+                col.rgb = pow(col.rgb, 1.6);          // Gamma 修正
                 fixed shadow = SHADOW_ATTENUATION(i); // 采样阴影 0~1
                 col.rgb *= shadow;                    // 把阴影乘到纯色上
                 return col;

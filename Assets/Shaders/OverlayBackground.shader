@@ -2,10 +2,17 @@ Shader "Hidden/OverlayBackground"
 {
     Properties
     {
-        _MainTex ("Scene", 2D) = "white" {}
-        _BackgroundTex ("Background (R)", 2D) = "white" {}
+        _MainTex     ("Scene",       2D) = "white" {}
+        _BackgroundTex ("Background",2D) = "white" {}
         _OverlayColor ("Overlay Color", Color) = (0,0,0,1)
+
+        // 默认取左下 1/4
+        _Left   ("Left",   Float) = 0.0
+        _Right  ("Right",  Float) = 0.5
+        _Top    ("Top",    Float) = 0.0
+        _Bottom ("Bottom", Float) = 0.5
     }
+
     SubShader
     {
         Tags { "RenderType"="Opaque" }
@@ -30,7 +37,12 @@ Shader "Hidden/OverlayBackground"
 
             sampler2D _MainTex;
             sampler2D _BackgroundTex;
-            fixed4 _OverlayColor;
+            fixed4    _OverlayColor;
+
+            float     _Left;
+            float     _Right;
+            float     _Top;
+            float     _Bottom;
 
             v2f vert (appdata v)
             {
@@ -42,7 +54,13 @@ Shader "Hidden/OverlayBackground"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed4 backgroundColor   = tex2D(_BackgroundTex, i.uv);   
+                // 把 0~1 的屏幕 UV 重映射到指定 1/4 区域的 UV
+                float2 quarterUV = float2(
+                    lerp(_Left, _Right,  i.uv.x),
+                    lerp(_Top,  _Bottom, i.uv.y)
+                );
+
+                fixed4 backgroundColor = tex2D(_BackgroundTex, quarterUV);
                 return backgroundColor;
             }
             ENDCG

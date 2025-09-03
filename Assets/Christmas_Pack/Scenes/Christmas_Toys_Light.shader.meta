@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: ddc500a1f16ab2441a98926ce9319c89
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures:
+  - _Christmas_Toys_A: {fileID: 2800000, guid: d4f2dfecf75d4a64ea87d88e6077a9e6, type: 3}
+  - _Christmas_Toys_E: {fileID: 2800000, guid: dce6c595cfa9f3f43abe57959fe541c6, type: 3}
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

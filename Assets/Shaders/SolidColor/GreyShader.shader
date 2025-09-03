@@ -39,8 +39,8 @@ Shader "Unlit/GreyShader"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                fixed4 col = fixed4(0.71, 0.73, 0.75,1);
-                col.rgb = pow(col.rgb, 2.2);          // Gamma 修正
+                fixed4 col = fixed4(0.71, 0.73, 0.75, 1);
+                col.rgb = pow(col.rgb, 3);          // Gamma 修正
                 fixed shadow = SHADOW_ATTENUATION(i); // 采样阴影 0~1
                 col.rgb *= shadow;                    // 把阴影乘到纯色上
                 return col;
