@@ -39,6 +39,7 @@ public class ExperimentManager3 : MonoBehaviour
         public int m_TextSize;
         public int m_TextIdx; // 从1开始
         public int m_Answer;
+        public int m_BGIdx; // 从1开始
     }
 
     struct ModelSceneInfo
@@ -47,6 +48,7 @@ public class ExperimentManager3 : MonoBehaviour
         public int m_TextIdx; // 从0开始
         public int m_IntensityIdx;
         public int m_TextSize;
+        public int m_BGIdx; // 从0开始
     }
     
     [Header("Model Names (must match scene hierarchy)")]
@@ -89,7 +91,7 @@ public class ExperimentManager3 : MonoBehaviour
     
     private GameObject m_PreExperimentModel;
     private string m_PreExperimentModelName = "LengZhuAndPlane";
-    private int[] m_PreExperimentTextIdxs = new int[]{0, 12, 24, 35};
+    private Texture[] m_PreText4UserStudy;
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length];
@@ -118,6 +120,7 @@ public class ExperimentManager3 : MonoBehaviour
             m_InputField.transform.parent.gameObject.SetActive(false);
         }
 
+        m_PreText4UserStudy = Resources.LoadAll<Texture>("PreText4UserStudy");
         m_Text4UserStudy = Resources.LoadAll<Texture>("Text4UserStudy");
         
         Debug.Log("Text Textures' Num = " + m_Text4UserStudy.Length);
@@ -141,6 +144,7 @@ public class ExperimentManager3 : MonoBehaviour
                     modelSceneInfo.m_ModelName = m_ModelNames[j];
                     modelSceneInfo.m_IntensityIdx = k + 1;
                     modelSceneInfo.m_TextIdx = idx;
+                    modelSceneInfo.m_BGIdx = idx % 4;
                     modelSceneInfo.m_TextSize = idx / (m_ModelNames.Length * m_IntensityCount) + 1;
                     res[idx++] = modelSceneInfo;
                 }
@@ -297,7 +301,11 @@ public class ExperimentManager3 : MonoBehaviour
         // 使用参数intensityIdx影响当前场景
         Debug.Log("Influence the Scene by Intensity = " + m_Intensities[intensityIdx - 1]);
         m_BackgroundCamera.GetComponent<BGProcess>().multiplier = m_Intensities[intensityIdx - 1] / 255.0f;
-        m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = Random.Range(0, 4);
+        
+        if (m_Phase == ExperimentPhase.FormalExperiment)
+            m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = m_CurInfo.m_BGIdx;
+        else 
+            m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = intensityIdx - 1;
     }
 
     private void AlignAllCamerasWithGo(GameObject go)
@@ -334,7 +342,7 @@ public class ExperimentManager3 : MonoBehaviour
 
         AlignAllCamerasWithGo(m_PreExperimentModel);
         
-        ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdxs[m_CurIntensityIdx - 1]));
+        ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, m_PreText4UserStudy[m_CurIntensityIdx - 1]);
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
         m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_PreExperimentModel.transform.GetChild(0).gameObject);
@@ -368,7 +376,7 @@ public class ExperimentManager3 : MonoBehaviour
                 
                 return;
             }
-            ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdxs[m_CurIntensityIdx - 1]));
+            ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, m_PreText4UserStudy[m_CurIntensityIdx - 1]);
             InfluenceSceneByIntensity(m_CurIntensityIdx);
         }
     }
@@ -379,7 +387,8 @@ public class ExperimentManager3 : MonoBehaviour
         {
             // 记录
             Log.Instance.UpdateModelID(GetModelID(m_CurrentActiveModel) + 1);
-            Log.Instance.UpdateLightIntensity(m_CurInfo.m_IntensityIdx);
+            Log.Instance.UpdateLightIntensity(m_Intensities[m_CurInfo.m_IntensityIdx - 1]);
+            Log.Instance.UpdateBGIdx(m_CurInfo.m_BGIdx + 1);
             Log.Instance.LogManualEvent();
             
             // 判断实验是否已经结束
