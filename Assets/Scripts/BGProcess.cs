@@ -10,6 +10,7 @@ public class BGProcess : MonoBehaviour
 
     public int quadrantIndex = 0;
 
+    private Texture2D[] DCCs;
     private Material mat;
 
     void OnEnable()
@@ -23,6 +24,8 @@ public class BGProcess : MonoBehaviour
             return;
         }
         mat = new Material(shader);
+        
+        DCCs = Resources.LoadAll<Texture2D>("DCCs");
     }
     
     
@@ -42,8 +45,8 @@ public class BGProcess : MonoBehaviour
         mat.SetFloat("_SquareSize", h);
         mat.SetVector("_Offset", new Vector2(offsetX, offsetY));
         mat.SetFloat("_Multiplier", multiplier);
-        mat.SetTexture("_BackgroundTex", backgroundImg);
-        mat.SetInt("_QuadrantIndex", quadrantIndex);
+        mat.SetTexture("_BackgroundTex", DCCs[quadrantIndex]);
+        //mat.SetInt("_QuadrantIndex", quadrantIndex);
 
         Graphics.Blit(src, dest, mat);
     }
