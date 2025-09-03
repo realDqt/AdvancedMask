@@ -1266,7 +1266,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4515836251304379041}
+  - {fileID: 3952837862085981177}
   - {fileID: 1643950751}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0.55, y: 0, z: -0.117}
@@ -2245,22 +2245,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &3882289287292786715
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4515836251304379041}
-  m_Layer: 0
-  m_Name: LengZhu
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!4 &3952837862085981177
 Transform:
   m_ObjectHideFlags: 0
@@ -2303,8 +2287,9 @@ GameObject:
   - component: {fileID: 3952837862085981177}
   - component: {fileID: 2165213599071161011}
   - component: {fileID: 3398485347864702503}
+  - component: {fileID: 5218935749885780163}
   m_Layer: 0
-  m_Name: default
+  m_Name: LengZhu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

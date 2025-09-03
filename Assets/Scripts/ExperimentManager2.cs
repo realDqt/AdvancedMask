@@ -32,6 +32,13 @@ public class ExperimentManager2 : MonoBehaviour
         public int m_IntensityIdx;
         public bool m_Swap;
     }
+    
+    struct ModelSceneInfo
+    {
+        public string m_ModelName;
+        public int m_IntensityIdx;
+        public bool m_Swap;
+    }
 
     private string m_PreExperimentModelName = "Capsule";
     private GameObject[] m_PreExperimentModels = new GameObject[2];

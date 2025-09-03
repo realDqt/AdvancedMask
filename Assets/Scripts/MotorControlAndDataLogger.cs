@@ -202,6 +202,21 @@ public class MotorControlAndDataLogger : MonoBehaviour
         {
             CounterClockwise(fineSpeedPercent, fineAdjustmentDegree);
         }
+    // 协程：电机归位并等待完成后隐藏遮罩
+    IEnumerator HomeAndUnmaskCoroutine()
+    {
+        if (_dev != null)
+        {
+            //_dev.Home(Thorlabs.Elliptec.ELLO_DLL.ELLBaseDevice.DeviceDirection.Clockwise);
+            decimal initialAngle = (decimal)initialAngleOffset;
+            _dev.MoveAbsolute(initialAngle);
+            _lastCalculatedTargetAngle = initialAngle;
+                // 等待电机归位完成（假设有IsHoming或类似标志，否则可用延时）
+            float waitTime = 2.0f; // 可根据实际归位时间调整
+            yield return new WaitForSeconds(waitTime);
+        }
+        if (blackMask != null) blackMask.SetActive(false);
+    }
     }
     
 

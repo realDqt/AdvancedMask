@@ -63,6 +63,18 @@ public class ExperimentManager3 : MonoBehaviour
     public Camera m_RawCamera;
     public Camera m_MaskCamera;
     public Camera m_BackgroundCamera;
+
+    public int m_BackgroundWidth = 512;
+    public int m_BackgroundHeight = 512;
+    
+    public int  m_AppearCountPerModel = 2;
+    
+    private int m_CurIntensityIdx = 1; // 当前亮度，取值1 2 3 4，代表四个不同亮度等级
+    private int m_IntensityCount = 4; // 总共的亮度种类， 暂时写死是4
+    
+    private Queue<ModelSceneInfo> m_ModelSceneInfoQueue;
+
+    public int[] m_Intensities = new int[] { 110, 150, 200, 235};
     
     public int  m_AppearCountPerModel = 2;
     
@@ -390,6 +402,14 @@ public class ExperimentManager3 : MonoBehaviour
             m_CurrentActiveModel.SetActive(false);
             ChangeToNext();
         }
+        Debug.LogError("Not found " + go.name);
+        return -1;
+    }
+    
+    private string GetCurTime()
+    {
+        string nowStr = System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        return nowStr;
     }
     
     private int GetModelID(GameObject go)
