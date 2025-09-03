@@ -1,66 +1,155 @@
-// 文件名：CodeGeneratorSaver.cs
-using System;
+using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using UnityEngine;
+using System;
 
 public class CodeGeneratorSaver : MonoBehaviour
 {
-    [Tooltip("输出文件名，放在 persistentDataPath 下")]
-    public string fileName = "D:\\DALAB\\Research\\Output\\RandomCodes.txt";
+    // 存储所有生成的字符串
+    private List<string>[] allStrings = new List<string>[4];
+    // 存储所有字符串的总列表
+    private List<string> allStringsCombined = new List<string>();
 
-    private void Start()
+    void Start()
     {
-        List<string> codes = GenerateCodes(36);
-        SaveToFile(codes);
+        // 初始化列表
+        for (int i = 0; i < 4; i++)
+        {
+            allStrings[i] = new List<string>();
+        }
+
+        // 生成各类字符串
+        GenerateStringsWithNumberAtPosition(0, 9);  // 数字在第1个位置(索引0)
+        GenerateStringsWithNumberAtPosition(1, 9);  // 数字在第2个位置(索引1)
+        GenerateStringsWithNumberAtPosition(2, 9);  // 数字在第3个位置(索引2)
+        GenerateStringsWithNumberAtPosition(3, 9);  // 数字在第4个位置(索引3)
+
+        // 合并所有字符串
+        CombineAllStrings();
+        
+        // 使用洗牌算法打乱顺序
+        ShuffleStrings();
+
+        // 打印结果
+        PrintResults();
+
+        // 保存到本地文件
+        SaveToFile();
     }
 
     /// <summary>
-    /// 生成 n 个 “3字母+1数字” 字符串，4 个位置各出现 n/4 次数字
+    /// 生成指定数量的字符串，其中数字位于指定位置
     /// </summary>
-    private List<string> GenerateCodes(int n)
+    /// <param name="numberPosition">数字所在的位置(0-3)</param>
+    /// <param name="count">要生成的数量</param>
+    void GenerateStringsWithNumberAtPosition(int numberPosition, int count)
     {
-        const int len = 4;            // 4 位
-        int digitPerPos = n / len;    // 每个位置数字出现次数（36/4=9）
+        if (numberPosition < 0 || numberPosition > 3)
+        {
+            Debug.LogError("数字位置必须在0-3之间");
+            return;
+        }
 
-        List<string> result = new List<string>(n);
-        char[] letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
-        char[] digits  = "0123456789".ToCharArray();
+        for (int i = 0; i < count; i++)
+        {
+            char[] chars = new char[4];
+            
+            for (int j = 0; j < 4; j++)
+            {
+                if (j == numberPosition)
+                {
+                    // 生成随机数字(0-9)
+                    chars[j] = (char)('0' + UnityEngine.Random.Range(0, 10));
+                }
+                else
+                {
+                    chars[j] = (char)('A' + UnityEngine.Random.Range(0, 26));
+                }
+            }
+            
+            allStrings[numberPosition].Add(new string(chars));
+        }
+    }
+
+    /// <summary>
+    /// 合并所有字符串到一个列表
+    /// </summary>
+    void CombineAllStrings()
+    {
+        allStringsCombined.Clear();
+        foreach (var list in allStrings)
+        {
+            allStringsCombined.AddRange(list);
+        }
+    }
+
+    /// <summary>
+    /// 使用Fisher-Yates洗牌算法打乱字符串顺序
+    /// </summary>
+    void ShuffleStrings()
+    {
         System.Random rng = new System.Random();
-
-        // 1. 先把 36 个位置全设为字母
-        char[][] chars = new char[n][];
-        for (int i = 0; i < n; i++)
+        int n = allStringsCombined.Count;
+        
+        // Fisher-Yates洗牌算法
+        while (n > 1)
         {
-            chars[i] = new char[len];
-            for (int p = 0; p < len; p++)
-                chars[i][p] = letters[rng.Next(letters.Length)];
+            n--;
+            int k = rng.Next(n + 1);
+            // 交换元素
+            string value = allStringsCombined[k];
+            allStringsCombined[k] = allStringsCombined[n];
+            allStringsCombined[n] = value;
         }
-
-        // 2. 按位置依次把 9 个字母换成数字
-        for (int pos = 0; pos < len; pos++)
-        {
-            // 随机挑 9 行
-            int[] rows = Enumerable.Range(0, n).OrderBy(_ => rng.Next()).Take(digitPerPos).ToArray();
-            foreach (int r in rows)
-                chars[r][pos] = digits[rng.Next(digits.Length)];
-        }
-
-        // 3. 组装字符串
-        for (int i = 0; i < n; i++)
-            result.Add(new string(chars[i]));
-
-        return result;
     }
 
     /// <summary>
-    /// 保存列表到本地 txt
+    /// 打印所有生成的字符串
     /// </summary>
-    private void SaveToFile(List<string> codes)
+    void PrintResults()
     {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
-        File.WriteAllLines(path, codes);
-        Debug.Log($"已生成并保存 36 个随机字符串到：{path}");
+        Debug.Log("===== 原始分组字符串 =====");
+        for (int i = 0; i < 4; i++)
+        {
+            Debug.Log($"----- 数字在第{i + 1}个位置的字符串 -----");
+            foreach (string str in allStrings[i])
+            {
+                Debug.Log(str);
+            }
+        }
+
+        Debug.Log("\n===== 打乱顺序后的字符串 =====");
+        foreach (string str in allStringsCombined)
+        {
+            Debug.Log(str);
+        }
+    }
+
+    /// <summary>
+    /// 将打乱顺序后的字符串保存到本地TXT文件
+    /// </summary>
+    void SaveToFile()
+    {
+        try
+        {
+            // 获取保存路径 - 桌面
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string filePath = Path.Combine(desktopPath, "RandomStrings.txt");
+
+            // 写入文件
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                foreach (string str in allStringsCombined)
+                {
+                    writer.WriteLine(str);
+                }
+            }
+
+            Debug.Log($"成功保存到文件: {filePath}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"保存文件失败: {e.Message}");
+        }
     }
 }

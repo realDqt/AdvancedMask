@@ -28,6 +28,7 @@ public class ExperimentManager3 : MonoBehaviour
     {
         public int m_CurTimes;
         public int m_CurIntensity;
+        public int m_TextIdx; // 从0开始
     }
 
     struct PostExperimentInfo
@@ -37,13 +38,13 @@ public class ExperimentManager3 : MonoBehaviour
         public string m_CurTimeStr;
         public int m_ModelID;
         public int m_TextSize;
-        public int m_TextIdx;
+        public int m_TextIdx; // 从1开始
     }
 
     struct ModelSceneInfo
     {
         public string m_ModelName;
-        public int m_TextIdx;
+        public int m_TextIdx; // 从0开始
         public int m_IntensityIdx;
         public int m_TextSize;
     }
@@ -57,7 +58,8 @@ public class ExperimentManager3 : MonoBehaviour
     private Queue<GameObject> m_ShowQueue; // Upcoming models to display
     private GameObject m_CurrentActiveModel;
 
-    private Texture[] Text4UserStudy;
+    private Texture[] m_Text4UserStudy;
+    private int[] m_Idx2Digit = new int[]{5,8,5,0,9,6,8,8,2,7,4,3,8,3,9,4,6,4,0,5,2,5,1,1,9,7,7,8,7,4,3,2,4,8,5,8};
     
   
 
@@ -97,7 +99,7 @@ public class ExperimentManager3 : MonoBehaviour
     
     private GameObject m_PreExperimentModel;
     private string m_PreExperimentModelName = "LengZhuAndPlane";
-    private int m_PreExperimentTextIdx = 12;
+    private int[] m_PreExperimentTextIdxs = new int[]{0, 12, 24, 35};
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length];
@@ -126,8 +128,9 @@ public class ExperimentManager3 : MonoBehaviour
             m_InputField.transform.parent.gameObject.SetActive(false);
         }
 
-        Text4UserStudy = Resources.LoadAll<Texture>("Text4UserStudy");
-
+        m_Text4UserStudy = Resources.LoadAll<Texture>("Text4UserStudy");
+        
+        Debug.Log("Text Textures' Num = " + m_Text4UserStudy.Length);
         AssignCameraToDisplay();
 
         //SetCameraRTWidthAndHeight(m_RawCamera, 1920, 1080);
@@ -182,11 +185,12 @@ public class ExperimentManager3 : MonoBehaviour
         return queue;
     }
     
-    private PreExperimentInfo GetPreExperimentInfo(int curTime, int curIntensityIdx)
+    private PreExperimentInfo GetPreExperimentInfo(int curTime, int curIntensityIdx, int curTextIdx)
     {
         PreExperimentInfo experimentInfo = new PreExperimentInfo();
         experimentInfo.m_CurTimes = curTime;
         experimentInfo.m_CurIntensity = m_Intensities[curIntensityIdx - 1];
+        experimentInfo.m_TextIdx = curTextIdx;
         return experimentInfo;
     }
     
@@ -201,6 +205,9 @@ public class ExperimentManager3 : MonoBehaviour
         
         // 当前亮度
         Debug.Log("Current Intensity: " + experimentInfo.m_CurIntensity);
+        
+        // 正确答案
+        Debug.Log("Answer: " + m_Idx2Digit[experimentInfo.m_TextIdx]);
         
         // 结束打印
         Debug.Log("End to Log Pre Experiment Info for " + experimentInfo.m_CurTimes);
@@ -241,8 +248,8 @@ public class ExperimentManager3 : MonoBehaviour
 
     private Texture GetTextTexture(int textIdx)
     {
-        Debug.Log("Try to get " + textIdx);
-        return null;
+        //Debug.Log("Try to get " + textIdx);
+        return m_Text4UserStudy[textIdx];
     }
 
     private void Start()
@@ -293,7 +300,7 @@ public class ExperimentManager3 : MonoBehaviour
             m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_CurrentActiveModel.transform.GetChild(1).gameObject);
         }
         
-        LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurInfo.m_IntensityIdx));
+        LogPreExperimentInfo(GetPreExperimentInfo(m_CurTimes++, m_CurInfo.m_IntensityIdx, m_CurInfo.m_TextIdx));
         InfluenceSceneByIntensity(m_CurInfo.m_IntensityIdx);
         return true;
     }
@@ -399,7 +406,7 @@ public class ExperimentManager3 : MonoBehaviour
         }
         m_PreExperimentModel.SetActive(true);
         
-        ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdx));
+        ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdxs[m_CurIntensityIdx - 1]));
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
         m_WhiteShadowPostProcess.ConstructGivenObjectMask(m_PreExperimentModel.transform.GetChild(0).gameObject);
@@ -445,6 +452,7 @@ public class ExperimentManager3 : MonoBehaviour
                 
                 return;
             }
+            ReplaceMainTexture(m_PreExperimentModel.transform.GetChild(0).gameObject, GetTextTexture(m_PreExperimentTextIdxs[m_CurIntensityIdx - 1]));
             InfluenceSceneByIntensity(m_CurIntensityIdx);
         }
     }
@@ -566,7 +574,7 @@ public class ExperimentManager3 : MonoBehaviour
         int monitorCount = Display.displays.Length;   // 等于几就表示连了几台
         for (int i = 0; i < monitorCount; ++i)
         {
-            Debug.Log($"显示器 {i} 分辨率 {Display.displays[i].renderingWidth}×{Display.displays[i].renderingHeight}");
+            //Debug.Log($"显示器 {i} 分辨率 {Display.displays[i].renderingWidth}×{Display.displays[i].renderingHeight}");
         }
         
         // 1. 激活所有可用显示器
