@@ -31,10 +31,11 @@ public class ExperimentManager2 : MonoBehaviour
         public string m_ModelName;
         public int m_IntensityIdx;
         public bool m_Swap;
+        public int m_BGIdx; // 从0开始
     }
 
-    private string m_PreExperimentModelName = "Capsule";
-    private GameObject[] m_PreExperimentModels = new GameObject[2];
+    private string[] m_PreExperimentModelNames = new string[] { "Sphere", "Monkey", "Dragon_50k", "Acacia 2" };
+    private GameObject[] m_PreExperimentModels;
     
     [Header("Settings")]
     public int  m_AppearCountPerModel = 2;   // How many times each model should appear
@@ -70,6 +71,7 @@ public class ExperimentManager2 : MonoBehaviour
     
     private void Awake()
     {
+        // 正式实验模型
         m_Models = new GameObject[m_ModelNames.Length * 2];
         for (int i = 0; i < m_ModelNames.Length; i++)
         {
@@ -90,6 +92,29 @@ public class ExperimentManager2 : MonoBehaviour
             {
                 m_Models[2 * i].SetActive(false);
                 m_Models[2 * i + 1].SetActive(false);
+            }
+        }
+        
+        
+        // 预实验模型
+        m_PreExperimentModels = new GameObject[m_PreExperimentModelNames.Length * 2];
+        for (int i = 0; i < m_PreExperimentModelNames.Length; i++)
+        {
+            m_PreExperimentModels[2 * i] = GameObject.Find(m_PreExperimentModelNames[i]);
+            m_PreExperimentModels[2 * i + 1] = GameObject.Find(m_PreExperimentModelNames[i] + " (1)");
+            
+            if (m_PreExperimentModels[2 * i] == null)
+            {
+                Debug.LogError("Model not found: " + m_PreExperimentModelNames[i]);
+            }
+            else if (m_PreExperimentModels[2 * i + 1] == null)
+            {
+                Debug.LogError("Model not found: " + m_PreExperimentModelNames[i] + " (1)");
+            }
+            else
+            {
+                m_PreExperimentModels[2 * i].SetActive(false);
+                m_PreExperimentModels[2 * i + 1].SetActive(false);
             }
         }
 
@@ -118,6 +143,7 @@ public class ExperimentManager2 : MonoBehaviour
                     modelSceneInfo.m_ModelName = m_ModelNames[j];
                     modelSceneInfo.m_IntensityIdx = k + 1;
                     modelSceneInfo.m_Swap = (i == 0);
+                    modelSceneInfo.m_BGIdx = idx % 4;
                     res[idx++] = modelSceneInfo;
                 }
             }
@@ -176,22 +202,13 @@ public class ExperimentManager2 : MonoBehaviour
         m_Phase = ExperimentPhase.PreExperiment;
         m_CurIntensityIdx = 1;
         
-        m_PreExperimentModels[0] = GameObject.Find(m_PreExperimentModelName);
-        if (m_PreExperimentModels[0] == null)
-        {
-            Debug.LogError("Pre Experiment Model not found: " + m_PreExperimentModelName);
-        }
-        m_PreExperimentModels[0].SetActive(true);
-        
-        m_PreExperimentModels[1] = GameObject.Find(m_PreExperimentModelName + " (1)");
-        if (m_PreExperimentModels[1] == null)
-        {
-            Debug.LogError("Pre Experiment Model not found: " + m_PreExperimentModelName + " (1)");
-        }
-        m_PreExperimentModels[1].SetActive(true);
+        m_PreExperimentModels[2 * (m_CurIntensityIdx - 1)].SetActive(true);
+        m_PreExperimentModels[2 * (m_CurIntensityIdx - 1) + 1].SetActive(true);
 
         m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
-        m_WhiteShadowPostProcess.ConstructGivenObjectsMask(m_PreExperimentModels);
+        
+        GameObject[] gameObjects = new GameObject[]{m_PreExperimentModels[2 * (m_CurIntensityIdx - 1)],  m_PreExperimentModels[2 * (m_CurIntensityIdx - 1) + 1]};
+        m_WhiteShadowPostProcess.ConstructGivenObjectsMask(gameObjects);
         m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
 
         Debug.Log("Start Pre Experiment");
@@ -272,7 +289,11 @@ public class ExperimentManager2 : MonoBehaviour
         // 使用参数intensityIdx影响当前场景
         Debug.Log("Influence the Scene by Intensity = " + m_Intensities[intensityIdx - 1]);
         m_BackgroundCamera.GetComponent<BGProcess>().multiplier = m_Intensities[intensityIdx - 1] / 255.0f;
-        m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = Random.Range(0, 4);
+        
+        if (m_Phase == ExperimentPhase.FormalExperiment)
+            m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = m_CurInfo.m_BGIdx;
+        else 
+            m_BackgroundCamera.GetComponent<BGProcess>().quadrantIndex = intensityIdx - 1;
     }
     
     private void Update()
@@ -293,17 +314,30 @@ public class ExperimentManager2 : MonoBehaviour
         // ------------------------------改变亮度---------------------------------
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            m_PreExperimentModels[2 * (m_CurIntensityIdx - 1)].SetActive(false);
+            m_PreExperimentModels[2 * (m_CurIntensityIdx - 1) + 1].SetActive(false);
             ++m_CurIntensityIdx;
+            
             if (m_CurIntensityIdx > m_IntensityCount)
             {
                 Debug.Log("Pre Experiment is ending");
-                m_PreExperimentModels[0].SetActive(false);
-                m_PreExperimentModels[1].SetActive(false);
+                //m_PreExperimentModels[0].SetActive(false);
+                //m_PreExperimentModels[1].SetActive(false);
                 
                 InitialFormalExperiment();
                 
                 return;
             }
+            
+            m_PreExperimentModels[2 * (m_CurIntensityIdx - 1)].SetActive(true);
+            m_PreExperimentModels[2 * (m_CurIntensityIdx - 1) + 1].SetActive(true);
+
+            m_WhiteShadowPostProcess = m_MaskCamera.GetComponent<WhiteShadowPostProcess>();
+        
+            GameObject[] gameObjects = new GameObject[]{m_PreExperimentModels[2 * (m_CurIntensityIdx - 1)],  m_PreExperimentModels[2 * (m_CurIntensityIdx - 1) + 1]};
+            m_WhiteShadowPostProcess.ConstructGivenObjectsMask(gameObjects);
+            m_WhiteShadowPostProcess.ConstructGivenShadowMask(m_Receiver);
+            
             InfluenceSceneByIntensity(m_CurIntensityIdx);
         }
         
@@ -316,6 +350,7 @@ public class ExperimentManager2 : MonoBehaviour
             // 记录实验数据到Log类
             Log.Instance.UpdateModelID(GetModelID(m_CurrentActiveModels[0]) + 1);
             Log.Instance.UpdateLightIntensity(m_Intensities[m_CurInfo.m_IntensityIdx - 1]);
+            Log.Instance.UpdateBGIdx(m_CurInfo.m_BGIdx + 1);
             Log.Instance.LogManualEvent();
             // 判断实验是否已经结束
             if (m_ModelSceneInfoQueue.Count == 0)
