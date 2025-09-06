@@ -69,6 +69,8 @@ public class ExperimentManager2 : MonoBehaviour
 
     private ExperimentPhase m_Phase = ExperimentPhase.PreExperiment;
     
+    private MotorControlAndDataLogger m_MotorControlAndDataLogger;
+    
     private void Awake()
     {
         // 正式实验模型
@@ -120,6 +122,12 @@ public class ExperimentManager2 : MonoBehaviour
 
         //SetCameraWidthAndHeight(1920, 1080);
         AssignCameraToDisplay();
+        
+        m_MotorControlAndDataLogger = GetComponent<MotorControlAndDataLogger>();
+        if (m_MotorControlAndDataLogger == null)
+        {
+            Debug.LogError("MotorControlAndDataLogger is null!");
+        }
 
     }
     
@@ -351,11 +359,17 @@ public class ExperimentManager2 : MonoBehaviour
             Log.Instance.UpdateModelID(GetModelID(m_CurrentActiveModels[0]) + 1);
             Log.Instance.UpdateLightIntensity(m_Intensities[m_CurInfo.m_IntensityIdx - 1]);
             Log.Instance.UpdateBGIdx(m_CurInfo.m_BGIdx + 1);
-            Log.Instance.LogManualEvent();
+
+            int totalTimes = m_AppearCountPerModel * m_ModelNames.Length * m_IntensityCount;
+            if(m_CurTimes - 1 <= totalTimes)
+                m_MotorControlAndDataLogger.MotorControlSpaceDownCallBack();
+            
             // 判断实验是否已经结束
-            if (m_ModelSceneInfoQueue.Count == 0)
+            if (m_CurTimes - 1 == totalTimes)
             {
                 Debug.Log("Experiment is ending! Thank you!");
+                ++m_CurTimes;
+                // 数据保存已由Log类统一管理，无需在此保存CSV
                 return;
             }
             // 切换

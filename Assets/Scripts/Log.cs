@@ -36,6 +36,7 @@ public class Log : MonoBehaviour
     private int _currentModelID = 0;
     private int _currentLightIntensity = 0;
     private int _currentBGIdx = 0;
+    private int _currentTextIdx = 0;
 
     // File I/O
     private StreamWriter _continuousDataWriter;
@@ -56,7 +57,7 @@ public class Log : MonoBehaviour
         string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         string continuousLogPath = Path.Combine(savePath, $"ContinuousLog_{timestamp}.csv");
         string manualLogPath = Path.Combine(savePath, $"ManualLog_{timestamp}.csv");
-        string header = "Timestamp,Angle,PupilSize,ModelID,LightIntensity,BackgroundIdx";
+        string header = "Timestamp,Angle,PupilSize,ModelID,LightIntensity,BackgroundIdx,TextIdx";
 
         try
         {
@@ -108,7 +109,7 @@ public class Log : MonoBehaviour
         string angleStr = _currentAngle.ToString(CultureInfo.InvariantCulture);
         string pupilSizeStr = _currentPupilSize.ToString(CultureInfo.InvariantCulture);
 
-        string logEntry = $"{timestamp},{angleStr},{pupilSizeStr},{_currentModelID},{_currentLightIntensity},{_currentBGIdx}";
+        string logEntry = $"{timestamp},{angleStr},{pupilSizeStr},{_currentModelID},{_currentLightIntensity},{_currentBGIdx}, {_currentTextIdx}";
         
         writer.WriteLine(logEntry);
         writer.Flush();
@@ -151,6 +152,11 @@ public class Log : MonoBehaviour
     public void UpdateLightIntensity(int newLightIntensity)
     {
         _currentLightIntensity = newLightIntensity;
+    }
+
+    public void UpdateTextIdx(int newTextIdx)
+    {
+        _currentTextIdx = newTextIdx;
     }
 
     /// <summary>

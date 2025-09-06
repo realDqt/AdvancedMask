@@ -69,6 +69,7 @@ public class MotorControlAndDataLogger : MonoBehaviour
         Log.Instance.UpdateAngle(_motorConnected ? (float)_dev.Position : 0f);
         Log.Instance.UpdatePupilSize(_currentPupilRadius);
 
+        /*
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Log.Instance.LogManualEvent();
@@ -78,6 +79,18 @@ public class MotorControlAndDataLogger : MonoBehaviour
             _dev.MoveAbsolute(initialAngle);
             Debug.Log($"[Motor] Moved to initial angle: {initialAngleOffset} degrees.");
         }
+        */
+    }
+
+    public void MotorControlSpaceDownCallBack()
+    {
+        Log.Instance.LogManualEvent();
+        // 显示黑色遮罩
+        if (blackMask != null) blackMask.SetActive(true);
+        decimal initialAngle = (decimal)initialAngleOffset;
+        if(_dev != null)_dev.MoveAbsolute(initialAngle);
+        else Debug.LogError("_dev is null");
+        Debug.Log($"[Motor] Moved to initial angle: {initialAngleOffset} degrees.");
     }
 
     void OnDestroy() => Cleanup();

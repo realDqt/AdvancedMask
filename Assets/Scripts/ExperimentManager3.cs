@@ -92,6 +92,8 @@ public class ExperimentManager3 : MonoBehaviour
     private GameObject m_PreExperimentModel;
     private string m_PreExperimentModelName = "LengZhuAndPlane";
     private Texture[] m_PreText4UserStudy;
+    
+    private MotorControlAndDataLogger m_MotorControlAndDataLogger;
     private void Awake()
     {
         m_Models = new GameObject[m_ModelNames.Length];
@@ -125,6 +127,12 @@ public class ExperimentManager3 : MonoBehaviour
         
         Debug.Log("Text Textures' Num = " + m_Text4UserStudy.Length);
         AssignCameraToDisplay();
+        
+        m_MotorControlAndDataLogger = GetComponent<MotorControlAndDataLogger>();
+        if (m_MotorControlAndDataLogger == null)
+        {
+            Debug.LogError("MotorControlAndDataLogger is null!");
+        }
 
         //SetCameraRTWidthAndHeight(m_RawCamera, 1920, 1080);
     }
@@ -389,12 +397,16 @@ public class ExperimentManager3 : MonoBehaviour
             Log.Instance.UpdateModelID(GetModelID(m_CurrentActiveModel) + 1);
             Log.Instance.UpdateLightIntensity(m_Intensities[m_CurInfo.m_IntensityIdx - 1]);
             Log.Instance.UpdateBGIdx(m_CurInfo.m_BGIdx + 1);
-            Log.Instance.LogManualEvent();
+            Log.Instance.UpdateTextIdx(m_CurInfo.m_TextIdx + 1);
+            
+            if(m_CurTimes - 1 <= m_PostExperimentInfos.Length)
+                m_MotorControlAndDataLogger.MotorControlSpaceDownCallBack();
             
             // 判断实验是否已经结束
-            if (m_CurTimes - 2 == m_PostExperimentInfos.Length - 1)
+            if (m_CurTimes - 1 == m_PostExperimentInfos.Length)
             {
                 Debug.Log("Experiment is ending! Thank you!");
+                ++m_CurTimes;
                 // 数据保存已由Log类统一管理，无需在此保存CSV
                 return;
             }
